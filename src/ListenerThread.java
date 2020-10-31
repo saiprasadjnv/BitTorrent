@@ -4,15 +4,26 @@ import java.io.ObjectOutputStream;
 import java.lang.Runnable;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+/**
+* Listener thread associated with a TCP connection. Collects all the messages to the listener port.
+* Places the messages in message queue.
+* */
 
 public class ListenerThread implements Runnable {
     private TCPConnectionInfo monitorConnection;
     private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;
-    public ListenerThread(TCPConnectionInfo monitorConnection){
+    private ConcurrentLinkedQueue<Message> messageQueue;
+    private ConcurrentHashMap<String, TCPConnectionInfo> peersToTCPConnectionsMapping;
+    public ListenerThread(TCPConnectionInfo monitorConnection, ConcurrentLinkedQueue<Message> messageQueue, ConcurrentHashMap<String, TCPConnectionInfo> peersToTCPConnectionsMapping){
         this.monitorConnection = monitorConnection;
         this.outputStream = monitorConnection.out;
         this.inputStream = monitorConnection.in;
+        this.messageQueue = messageQueue;
+        this.peersToTCPConnectionsMapping = peersToTCPConnectionsMapping;
     }
     private static boolean verifyHandshake(HandshakeMessage receivedHandshake){
         if(receivedHandshake.handshakeHeader.equals("P2PFILESHARINGPROJ")==false){
@@ -21,19 +32,19 @@ public class ListenerThread implements Runnable {
         return true;
     }
     public void run(){
-        System.out.println("Running Listener thread");
         HandshakeMessage myHandshakeMessage = new HandshakeMessage(monitorConnection.myPeerID);
         try {
-            System.out.println("Sending handshake message");
-            System.out.println("outStream in thread: "+ outputStream.hashCode());
-            System.out.println("inStream in thread: " + inputStream.hashCode());
             this.outputStream.writeObject(myHandshakeMessage);
             this.outputStream.flush();
             HandshakeMessage receivedHandshake= (HandshakeMessage) this.inputStream.readObject();
             this.monitorConnection.associatedPeerId = receivedHandshake.peerID;
+            this.peersToTCPConnectionsMapping.put(receivedHandshake.peerID, this.monitorConnection);
             boolean isValidHandshake = verifyHandshake(receivedHandshake);
+            //Send bitfield message
+
             while (true){
                 Message newMessage = (Message) inputStream.readObject();
+
             }
         }catch (IOException ex){
 

@@ -7,6 +7,9 @@ import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
 import java.net.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class peerProcess {
     private String peerId;
@@ -18,13 +21,14 @@ public class peerProcess {
     private int pieceSize;
     private int listeningPort;
     private boolean hasFile;
-//    static String peerInfoConfig = System.getProperty("user.dir") + "/PeerInfo.cfg";
-//    static String commonConfig = System.getProperty("user.dir") + "/Common.cfg";
+    public ConcurrentLinkedQueue<Message> messageQueue;
+    public ConcurrentHashMap<String, TCPConnectionInfo> peersToTCPConnectionsMapping;
     static String peerInfoConfig = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/src/PeerInfo.cfg";
     static String commonConfig = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/src/Common.cfg";
     private Vector<RemotePeerInfo> peerInfoVector;
     private Vector<RemotePeerInfo> peersToConnect;
     private Vector<TCPConnectionInfo> activeConnections;
+    private
 
     /*
     * Constructor for the peerProcess object. Initializes the peerId.
@@ -33,7 +37,9 @@ public class peerProcess {
         this.peerId = peerId;
         initializeConfig();
         getPeerInfo();
-        activeConnections = new Vector<TCPConnectionInfo>();
+        this.activeConnections = new Vector<TCPConnectionInfo>();
+        this.messageQueue = new ConcurrentLinkedQueue<Message>();
+        this.peersToTCPConnectionsMapping = new ConcurrentHashMap<String, TCPConnectionInfo>();
         //ToDo: Check if the peer has complete file or not and update hasFile.
     }
 
@@ -89,7 +95,7 @@ public class peerProcess {
             while((st = in.readLine()) != null) {
                 String[] tokens = st.split("\\s+");
                 RemotePeerInfo newNode = new RemotePeerInfo(tokens[0], tokens[1], tokens[2]);
-                System.out.println(newNode.peerId + " " +  this.peerId + " " + newNode.peerId.equals(this.peerId));
+//                System.out.println(newNode.peerId + " " +  this.peerId + " " + newNode.peerId.equals(this.peerId));
                 if(newNode.peerId.equals(this.peerId)){
                     this.listeningPort = Integer.parseInt(newNode.peerPort);
                     makeConnections = false;
@@ -103,10 +109,9 @@ public class peerProcess {
             in.close();
         }
         catch (Exception ex) {
-            // System.out.println(ex.toString());
             ex.printStackTrace();
         }
-        System.out.println("Listener Port: " + this.listeningPort);
+//        System.out.println("Listener Port: " + this.listeningPort);
     }
 
     /*
@@ -114,12 +119,7 @@ public class peerProcess {
      * It then creates a Message handler to handle all the messages received by the node.
      * */
     public static void main(String[] args){
-//        System.out.println("Starting the peer process on peerId: " + args[0]);
         peerProcess peerNode = new peerProcess(args[0]);
-//        System.out.println(peerNode.peersToConnect.toString());
-//        for(RemotePeerInfo i: peerNode.peersToConnect){
-//            System.out.println(i.peerId);
-//        }
         try{
             int remainingPeers = peerNode.peerInfoVector.size();
             //Send connection requests to all the peers listed in peersToConnect
@@ -127,43 +127,38 @@ public class peerProcess {
                 Socket requestSocket = new Socket(node.peerAddress, Integer.parseInt(node.peerPort));
                 ObjectInputStream in = new ObjectInputStream(requestSocket.getInputStream());
                 ObjectOutputStream out = new ObjectOutputStream(requestSocket.getOutputStream());
-                System.out.println("inputStream in main: " + in.hashCode());
-                System.out.println("outStream in main: "+ out.hashCode());
                 TCPConnectionInfo newTCPConnection = new TCPConnectionInfo(requestSocket, in, out, peerNode.peerId);
-                Runnable newThread = new ListenerThread(newTCPConnection);
+                Runnable newThread = new ListenerThread(newTCPConnection, peerNode.messageQueue, peerNode.peersToTCPConnectionsMapping);
                 new Thread(newThread).start();
+                remainingPeers--;
                 peerNode.activeConnections.addElement(newTCPConnection);
                 //Create a listener thread.
             }
-
+            
             //Start a server on this node and wait for the remaining nodes to send connection requests
             ServerSocket listener = new ServerSocket(peerNode.listeningPort);
-//            System.out.println("Started listener on this node");
+            System.out.println("Started listener on this node");
+            System.out.println("Remaining peers: " + remainingPeers);
             while(remainingPeers>0){
                 Socket listenSocket = listener.accept();
-//                System.out.println("Received a connection request from a port id: " + listenSocket.getPort());
+                System.out.println("Received a connection request from a port id: " + listenSocket.getPort());
                 ObjectOutputStream out = new ObjectOutputStream(listenSocket.getOutputStream());
-//                System.out.println("Initialized the in and out buffers");
                 out.flush();
                 ObjectInputStream in = new ObjectInputStream(listenSocket.getInputStream());
-//                System.out.println("Initialized the input buffer");
-                System.out.println("inputStream in main: " + in.hashCode());
-                System.out.println("outStream in main: "+ out.hashCode());
                 TCPConnectionInfo newTCPConnection = new TCPConnectionInfo(listenSocket, in, out, peerNode.peerId);
-//                System.out.println("Created new TCP connection object");
-                Runnable newThread = new ListenerThread(newTCPConnection);
+                Runnable newThread = new ListenerThread(newTCPConnection, peerNode.messageQueue, peerNode.peersToTCPConnectionsMapping);
                 new Thread(newThread).start();
                 peerNode.activeConnections.addElement(newTCPConnection);
-                // Create a listener thread for each connected node to collect messages from these nodes
                 remainingPeers--;
-//                System.out.println(remainingPeers);
+                System.out.println(remainingPeers);
             }
             listener.close();
         }catch (Exception ex){
-//            System.out.println(ex.printStackTrace());
             ex.printStackTrace();
         }
+
         while(true){
+            System.out.println(peerNode.peersToTCPConnectionsMapping.toString());
         }
 
     }
