@@ -12,24 +12,26 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class peerProcess {
-    private String peerId;
-    private int numberOfPreferredNeighbours;
-    private int unchokingInterval;
-    private int optimisticUnchokingInterval;
-    private String fileName;
-    private int fileSize;
-    private int pieceSize;
-    private int listeningPort;
-    private boolean hasFile;
+    protected String peerId;
+    protected int numberOfPreferredNeighbours;
+    protected int unchokingInterval;
+    protected int optimisticUnchokingInterval;
+    protected String fileName;
+    protected int fileSize;
+    protected int pieceSize;
+    protected int listeningPort;
+    protected boolean hasFile;
     public ConcurrentLinkedQueue<Message> messageQueue;
     public ConcurrentHashMap<String, TCPConnectionInfo> peersToTCPConnectionsMapping;
     static String peerInfoConfig = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/src/PeerInfo.cfg";
     static String commonConfig = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/src/Common.cfg";
-    private Vector<RemotePeerInfo> peerInfoVector;
-    private Vector<RemotePeerInfo> peersToConnect;
-    private Vector<TCPConnectionInfo> activeConnections;
-    private
-
+    protected Vector<RemotePeerInfo> peerInfoVector;
+    protected Vector<RemotePeerInfo> peersToConnect;
+    protected Vector<TCPConnectionInfo> activeConnections;
+    protected HashMap<String, boolean[]> bitFieldsOfPeers;
+    protected boolean[] myBitField;
+    private int numberOfPieces;
+    MessageHandler myMessageHandler;
     /*
     * Constructor for the peerProcess object. Initializes the peerId.
     * */
@@ -40,6 +42,7 @@ public class peerProcess {
         this.activeConnections = new Vector<TCPConnectionInfo>();
         this.messageQueue = new ConcurrentLinkedQueue<Message>();
         this.peersToTCPConnectionsMapping = new ConcurrentHashMap<String, TCPConnectionInfo>();
+        this.myMessageHandler = new MessageHandler(this);
         //ToDo: Check if the peer has complete file or not and update hasFile.
     }
 
@@ -54,21 +57,28 @@ public class peerProcess {
             while((st = in.readLine()) != null) {
 
                 String[] tokens = st.split("\\s+");
-                if(tokens[0].equals("NumberOfPreferredNeighbors")){
-                    this.numberOfPreferredNeighbours = Integer.parseInt(tokens[1]);
-                }else if(tokens[0].equals("UnchokingInterval")){
-                    this.unchokingInterval = Integer.parseInt(tokens[1]);
-                }else if(tokens[0].equals("OptimisticUnchokingInterval")){
-                    this.optimisticUnchokingInterval = Integer.parseInt(tokens[1]);
-                }else if(tokens[0].equals("FileName")){
+                switch (tokens[0]) {
+                    case "NumberOfPreferredNeighbors":
+                        this.numberOfPreferredNeighbours = Integer.parseInt(tokens[1]);
+                        break;
+                    case "UnchokingInterval":
+                        this.unchokingInterval = Integer.parseInt(tokens[1]);
+                        break;
+                    case "OptimisticUnchokingInterval":
+                        this.optimisticUnchokingInterval = Integer.parseInt(tokens[1]);
+                        break;
+                    case "FileName":
 //                    System.out.println(tokens[0] + tokens[1]);
-                    this.fileName = tokens[1];
-                }else if(tokens[0].equals("FileSize")){
-                    this.fileSize = Integer.parseInt(tokens[1]);
-                }else if(tokens[0].equals("PieceSize")){
-                    this.pieceSize = Integer.parseInt(tokens[1]);
-                }else{
-                     throw new Exception("Invalid parameter in the file Common.cfg");
+                        this.fileName = tokens[1];
+                        break;
+                    case "FileSize":
+                        this.fileSize = Integer.parseInt(tokens[1]);
+                        break;
+                    case "PieceSize":
+                        this.pieceSize = Integer.parseInt(tokens[1]);
+                        break;
+                    default:
+                        throw new Exception("Invalid parameter in the file Common.cfg");
                 }
             }
             in.close();
@@ -76,6 +86,8 @@ public class peerProcess {
         catch (Exception ex) {
             System.out.println(ex.toString());
         }
+        this.numberOfPieces = fileSize/pieceSize + (fileSize%pieceSize);
+        this.myBitField = new boolean[numberOfPieces];
     }
 
     /*
@@ -134,7 +146,7 @@ public class peerProcess {
                 peerNode.activeConnections.addElement(newTCPConnection);
                 //Create a listener thread.
             }
-            
+
             //Start a server on this node and wait for the remaining nodes to send connection requests
             ServerSocket listener = new ServerSocket(peerNode.listeningPort);
             System.out.println("Started listener on this node");
@@ -152,6 +164,7 @@ public class peerProcess {
                 remainingPeers--;
                 System.out.println(remainingPeers);
             }
+
             listener.close();
         }catch (Exception ex){
             ex.printStackTrace();

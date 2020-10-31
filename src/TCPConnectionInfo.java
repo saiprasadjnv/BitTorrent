@@ -21,4 +21,18 @@ public class TCPConnectionInfo {
         this.out = out;
         this.myPeerID = myPeerID;
     }
+
+    public void sendMessage(Message message){
+        try {
+            this.out.writeObject(message);
+            this.out.flush();
+        }catch (IOException ex){
+            ex.printStackTrace();
+        }
+    }
+    public boolean isAlive(){
+        return this.connectedToSocket.isConnected();
+    }
+
+
 }

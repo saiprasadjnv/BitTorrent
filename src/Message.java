@@ -1,22 +1,46 @@
 public class Message {
-    public byte messageLength;
-    public short messageType;
+    public int messageLength;
+    public byte messageType;
     public int pieceIndex;
     public boolean[] bitField;
-    Message(short messageType, byte messageLength){
+    public TCPConnectionInfo messageOrigin;
+
+    Message(byte messageType, int messageLength){
         this.messageType = messageType;
         this.messageLength = messageLength;
     }
-
-    Message(short messageType, byte messageLength, int pieceIndex){
+    /***
+     * Constructor for "request" and "have" messages
+     */
+    Message(byte messageType, int messageLength, int pieceIndex){
         this.messageType = messageType;
         this.messageLength = messageLength;
         this.pieceIndex = pieceIndex;
     }
 
-    Message(short messageType, byte messageLength, boolean[] bitField){
+    /***
+     * Constructor for "bitfield" message
+     */
+    Message(byte messageType, int messageLength, boolean[] bitField){
         this.messageType = messageType;
         this.messageLength = messageLength;
         this.bitField = bitField;
     }
+
+    /**
+     * Constructor for "piece" message.
+     * */
+//    Message(int messageType, int messageLength, int pieceIndex, FilePart filepart){
+//
+//    }
+
+
+    /***
+     * Default constructor for custom messages. Message type '100' represents custom message'
+     * This is used to notify the peerProcess that a new Handshake message is received.
+     * */
+    Message(){
+        this.messageType = 100;
+    }
+
 }

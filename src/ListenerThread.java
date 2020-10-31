@@ -25,32 +25,34 @@ public class ListenerThread implements Runnable {
         this.messageQueue = messageQueue;
         this.peersToTCPConnectionsMapping = peersToTCPConnectionsMapping;
     }
-    private static boolean verifyHandshake(HandshakeMessage receivedHandshake){
-        if(receivedHandshake.handshakeHeader.equals("P2PFILESHARINGPROJ")==false){
+    private boolean verifyHandshake(HandshakeMessage receivedHandshake){
+        if(!receivedHandshake.handshakeHeader.equals("P2PFILESHARINGPROJ") || this.peersToTCPConnectionsMapping.containsKey(receivedHandshake.peerID)){
             return false;
         }
         return true;
     }
+
     public void run(){
         HandshakeMessage myHandshakeMessage = new HandshakeMessage(monitorConnection.myPeerID);
         try {
             this.outputStream.writeObject(myHandshakeMessage);
             this.outputStream.flush();
             HandshakeMessage receivedHandshake= (HandshakeMessage) this.inputStream.readObject();
-            this.monitorConnection.associatedPeerId = receivedHandshake.peerID;
-            this.peersToTCPConnectionsMapping.put(receivedHandshake.peerID, this.monitorConnection);
             boolean isValidHandshake = verifyHandshake(receivedHandshake);
-            //Send bitfield message
-
+            if(isValidHandshake){
+                this.monitorConnection.associatedPeerId = receivedHandshake.peerID;
+                this.peersToTCPConnectionsMapping.put(receivedHandshake.peerID, this.monitorConnection);
+                Message newMessage = new Message();
+                newMessage.messageOrigin = this.monitorConnection;
+                messageQueue.add(newMessage);
+            }
             while (true){
                 Message newMessage = (Message) inputStream.readObject();
-
+                newMessage.messageOrigin = this.monitorConnection;
+                messageQueue.add(newMessage);
             }
-        }catch (IOException ex){
-
-        }catch (ClassNotFoundException ex){
-
+        }catch (IOException|ClassNotFoundException ex){
+            ex.printStackTrace();
         }
-
     }
 }
