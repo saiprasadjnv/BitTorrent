@@ -30,7 +30,7 @@ public class FileObject {
     }
 
     /**
-     * Read the file piece with pieceIndex.
+     * Read the piece with pieceIndex from the file.
      * */
     public byte[] readPiece(int pieceIndex){
         byte[] piece = new byte[pieceSize];
@@ -50,20 +50,21 @@ public class FileObject {
     }
 
     /***
-     * Write file piece to the file.
+     * Write piece to the file.
      **/
-    public void writePiece(int pieceIndex, byte[] piece){
+    public boolean writePiece(int pieceIndex, byte[] piece){
         try{
             int offSet = (pieceIndex-1)*pieceSize;
             fileAccess.write(piece, offSet, pieceSize);
+            return true;
         }catch(IOException ex){
             ex.printStackTrace();
-        }finally{
-            try{
+        }finally {
+            try {
                 fileAccess.close();
-            }catch (IOException ex){
-
+            } catch (IOException ex) {
             }
         }
+        return false;
     }
 }

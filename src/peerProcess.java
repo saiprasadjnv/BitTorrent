@@ -6,7 +6,6 @@ import java.util.*;
 import java.net.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class peerProcess {
     protected String peerId;
@@ -30,7 +29,7 @@ public class peerProcess {
     protected Vector<TCPConnectionInfo> activeConnections;
     protected HashMap<String, boolean[]> bitFieldsOfPeers;
     protected boolean[] myBitField;
-    private int numberOfPieces;
+    protected int numberOfPieces;
 //    protected MessageHandler myMessageHandler;
     FileObject myFileObject;
     /*
@@ -38,17 +37,16 @@ public class peerProcess {
     * */
     peerProcess(String peerId){
         this.peerId = peerId;
-        getPeerInfo();
         peerHome = HOMEDIR + "peer_" + peerId + "/";
+        getPeerInfo();
         initializeConfig();
         this.activeConnections = new Vector<TCPConnectionInfo>();
         this.messageQueue = new ConcurrentLinkedQueue<Message>();
         this.peersToTCPConnectionsMapping = new ConcurrentHashMap<String, TCPConnectionInfo>();
-        //ToDo: Check if the peer has complete file or not and update hasFile.
     }
 
 
-    /*
+    /**
     * Initialize the config parameters in the local datastructures. Read from the common.cfg file.
     * If the node does not have the target file, create a new file to read/write the shared pieces.
     * Initialize the bitfields of this node and all the peers in the P2P network.
@@ -84,12 +82,18 @@ public class peerProcess {
                         throw new Exception("Invalid parameter in the file Common.cfg");
                 }
             }
-            myBitField = new boolean[numberOfPieces];
             bitFieldsOfPeers = new HashMap<String, boolean[]>();
+            numberOfPieces = fileSize/pieceSize;
+            if(fileSize%pieceSize!=0){
+                numberOfPieces++;
+            }
+            this.myBitField = new boolean[numberOfPieces];
             File peerDir = new File(peerHome);
             boolean mkdirRes = peerDir.mkdir();
-            if(hasFile){
+            if(this.hasFile){
                 Arrays.fill(myBitField, true);
+                System.out.println("My bit field: " + " Size: " + myBitField.length);
+                Utility.printBooleanArray(myBitField);
             }else{
                 Arrays.fill(myBitField, false);
                 //Create an empty file to write pieces to.
@@ -101,8 +105,6 @@ public class peerProcess {
         catch (Exception ex) {
             ex.printStackTrace();
         }
-        this.numberOfPieces = fileSize/pieceSize + (fileSize%pieceSize);
-        this.myBitField = new boolean[numberOfPieces];
     }
 
     /*
@@ -121,10 +123,11 @@ public class peerProcess {
             BufferedReader in = new BufferedReader(new FileReader(peerInfoConfig));
             while((st = in.readLine()) != null) {
                 String[] tokens = st.split("\\s+");
-                RemotePeerInfo newNode = new RemotePeerInfo(tokens[0], tokens[1], tokens[2]);
+                RemotePeerInfo newNode = new RemotePeerInfo(tokens[0], tokens[1], tokens[2], Integer.parseInt(tokens[3]));
 //                System.out.println(newNode.peerId + " " +  this.peerId + " " + newNode.peerId.equals(this.peerId));
                 if(newNode.peerId.equals(this.peerId)){
                     this.listeningPort = Integer.parseInt(newNode.peerPort);
+                    this.hasFile = newNode.hasFile;
                     makeConnections = false;
                 }else{
                     peerInfoVector.addElement(newNode);
@@ -166,8 +169,8 @@ public class peerProcess {
 
             //Start a server on this node and wait for the remaining nodes to send connection requests
             ServerSocket listener = new ServerSocket(peerNode.listeningPort);
-            System.out.println("Started listener on this node");
-            System.out.println("Remaining peers: " + remainingPeers);
+//            System.out.println("Started listener on this node");
+//            System.out.println("Remaining peers: " + remainingPeers);
             while(remainingPeers>0){
                 Socket listenSocket = listener.accept();
                 System.out.println("Received a connection request from a port id: " + listenSocket.getPort());

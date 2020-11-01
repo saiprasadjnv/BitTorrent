@@ -1,10 +1,11 @@
 import java.io.Serializable;
 
 public class Message implements Serializable {
-    public int messageLength;
-    public byte messageType;
-    public int pieceIndex;
-    public boolean[] bitField;
+    protected int messageLength;
+    protected byte messageType;
+    protected int pieceIndex;
+    protected boolean[] bitField;
+    protected byte[] piece;
     public TCPConnectionInfo messageOrigin;
 
     Message(byte messageType, int messageLength){
@@ -32,9 +33,12 @@ public class Message implements Serializable {
     /**
      * Constructor for "piece" message.
      * */
-//    Message(int messageType, int messageLength, int pieceIndex, FilePart filepart){
-//
-//    }
+    Message(byte messageType, int messageLength, int pieceIndex, byte[] piece){
+        this.messageType = messageType;
+        this.messageLength = messageLength;
+        this.pieceIndex = pieceIndex;
+        this.piece = piece;
+    }
 
     /***
      * Default constructor for custom messages. Message type '100' represents custom message'

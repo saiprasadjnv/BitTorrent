@@ -33,6 +33,4 @@ public class TCPConnectionInfo {
     public boolean isAlive(){
         return this.connectedToSocket.isConnected();
     }
-
-
 }
