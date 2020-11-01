@@ -1,10 +1,11 @@
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class MessageHandler {
+public class MessageHandler implements Runnable{
     peerProcess myProcess;
     public ConcurrentLinkedQueue<Message> messageQueue;
     public ConcurrentHashMap<String, TCPConnectionInfo> peersToTCPConnectionsMapping;
+
     MessageHandler(peerProcess myProcess){
         this.myProcess = myProcess;
         this.peersToTCPConnectionsMapping = myProcess.peersToTCPConnectionsMapping;
@@ -73,40 +74,47 @@ public class MessageHandler {
 //
 //    }
 
-    void start(){
+    public void run(){
         while(true){
-            Message newMessage = messageQueue.remove();
-            switch (newMessage.messageType){
-                case 0:
-                    //Handle Choke message
-                    break;
-                case 1:
-                    //Handle Unchoke message
-                    break;
-                case 2:
-                    //Handle Interested message
-                    break;
-                case 3:
-                    //Handle Not interested message
-                    break;
-                case 4:
-                    //Handle Have message
-                    break;
-                case 5:
-                    //Handle bitfield message
-                    break;
-                case 6:
-                    //Handle request message
-                    break;
-                case 7:
-                    //Handle Piece message
-                    break;
-                case 100:
-                    //Handle Handshake message
-                    CreateAndSendBitFieldMessage(newMessage.messageOrigin);
-                    break;
-                default:
-                    System.out.println("Invalid Message type received");
+            if(!messageQueue.isEmpty()) {
+                Message newMessage = messageQueue.remove();
+                System.out.println("Received message type: " + newMessage.messageType + "; From: " + newMessage.messageOrigin.associatedPeerId);
+                switch (newMessage.messageType) {
+                    case 0:
+                        //Handle Choke message
+                        break;
+                    case 1:
+                        //Handle Unchoke message
+                        break;
+                    case 2:
+                        //Handle Interested message
+                        break;
+                    case 3:
+                        //Handle Not interested message
+                        break;
+                    case 4:
+                        //Handle Have message
+                        break;
+                    case 5:
+                        //Handle bitfield message
+                        String connectedPeer  = newMessage.messageOrigin.associatedPeerId;
+                        System.out.println("Received bit-field message from :" + connectedPeer);
+                        //Utility.printBooleanArray(newMessage.bitField);
+                        myProcess.bitFieldsOfPeers.put(connectedPeer, newMessage.bitField);
+                        break;
+                    case 6:
+                        //Handle request message
+                        break;
+                    case 7:
+                        //Handle Piece message
+                        break;
+                    case 100:
+                        //Handle Handshake message
+                        CreateAndSendBitFieldMessage(newMessage.messageOrigin);
+                        break;
+                    default:
+                        System.out.println("Invalid Message type received");
+                }
             }
 
         }

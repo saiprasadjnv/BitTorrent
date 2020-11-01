@@ -1,7 +1,4 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.Vector;
 import java.nio.*;
 import java.nio.channels.*;
@@ -25,30 +22,36 @@ public class peerProcess {
     public ConcurrentHashMap<String, TCPConnectionInfo> peersToTCPConnectionsMapping;
     static String peerInfoConfig = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/src/PeerInfo.cfg";
     static String commonConfig = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/src/Common.cfg";
+//    static String HOMEDIR = System.getProperty("user.dir");
+    static String HOMEDIR = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/";
+    private String peerHome;
     protected Vector<RemotePeerInfo> peerInfoVector;
     protected Vector<RemotePeerInfo> peersToConnect;
     protected Vector<TCPConnectionInfo> activeConnections;
     protected HashMap<String, boolean[]> bitFieldsOfPeers;
     protected boolean[] myBitField;
     private int numberOfPieces;
-    MessageHandler myMessageHandler;
+//    protected MessageHandler myMessageHandler;
+    FileObject myFileObject;
     /*
     * Constructor for the peerProcess object. Initializes the peerId.
     * */
     peerProcess(String peerId){
         this.peerId = peerId;
-        initializeConfig();
         getPeerInfo();
+        peerHome = HOMEDIR + "peer_" + peerId + "/";
+        initializeConfig();
         this.activeConnections = new Vector<TCPConnectionInfo>();
         this.messageQueue = new ConcurrentLinkedQueue<Message>();
         this.peersToTCPConnectionsMapping = new ConcurrentHashMap<String, TCPConnectionInfo>();
-        this.myMessageHandler = new MessageHandler(this);
         //ToDo: Check if the peer has complete file or not and update hasFile.
     }
 
 
     /*
     * Initialize the config parameters in the local datastructures. Read from the common.cfg file.
+    * If the node does not have the target file, create a new file to read/write the shared pieces.
+    * Initialize the bitfields of this node and all the peers in the P2P network.
     * */
     void initializeConfig(){
         String st;
@@ -81,10 +84,22 @@ public class peerProcess {
                         throw new Exception("Invalid parameter in the file Common.cfg");
                 }
             }
+            myBitField = new boolean[numberOfPieces];
+            bitFieldsOfPeers = new HashMap<String, boolean[]>();
+            File peerDir = new File(peerHome);
+            boolean mkdirRes = peerDir.mkdir();
+            if(hasFile){
+                Arrays.fill(myBitField, true);
+            }else{
+                Arrays.fill(myBitField, false);
+                //Create an empty file to write pieces to.
+                File newFile = new File(peerHome + fileName);
+                boolean createNewFileRes = newFile.createNewFile();
+            }
             in.close();
         }
         catch (Exception ex) {
-            System.out.println(ex.toString());
+            ex.printStackTrace();
         }
         this.numberOfPieces = fileSize/pieceSize + (fileSize%pieceSize);
         this.myBitField = new boolean[numberOfPieces];
@@ -132,6 +147,8 @@ public class peerProcess {
      * */
     public static void main(String[] args){
         peerProcess peerNode = new peerProcess(args[0]);
+        Runnable myMessageHandler = new MessageHandler(peerNode);
+        new Thread(myMessageHandler).start();
         try{
             int remainingPeers = peerNode.peerInfoVector.size();
             //Send connection requests to all the peers listed in peersToConnect
@@ -140,8 +157,8 @@ public class peerProcess {
                 ObjectInputStream in = new ObjectInputStream(requestSocket.getInputStream());
                 ObjectOutputStream out = new ObjectOutputStream(requestSocket.getOutputStream());
                 TCPConnectionInfo newTCPConnection = new TCPConnectionInfo(requestSocket, in, out, peerNode.peerId);
-                Runnable newThread = new ListenerThread(newTCPConnection, peerNode.messageQueue, peerNode.peersToTCPConnectionsMapping);
-                new Thread(newThread).start();
+                Runnable newListenerThread = new ListenerThread(newTCPConnection, peerNode.messageQueue, peerNode.peersToTCPConnectionsMapping);
+                new Thread(newListenerThread).start();
                 remainingPeers--;
                 peerNode.activeConnections.addElement(newTCPConnection);
                 //Create a listener thread.
@@ -164,16 +181,22 @@ public class peerProcess {
                 remainingPeers--;
                 System.out.println(remainingPeers);
             }
-
             listener.close();
         }catch (Exception ex){
             ex.printStackTrace();
         }
-
-        while(true){
-            System.out.println(peerNode.peersToTCPConnectionsMapping.toString());
+        boolean isFileSharedToAllPeers = false;
+        while(!isFileSharedToAllPeers){
+            //Wait until the peer sharing process is finished
+            isFileSharedToAllPeers = true;
+            for(boolean[] bitField: peerNode.bitFieldsOfPeers.values()){
+                for(boolean hasPiece: bitField){
+                    if(!hasPiece){
+                        isFileSharedToAllPeers = false;
+                        break;
+                    }
+                }
+            }
         }
-
     }
-
 }

@@ -1,4 +1,6 @@
-public class Message {
+import java.io.Serializable;
+
+public class Message implements Serializable {
     public int messageLength;
     public byte messageType;
     public int pieceIndex;
@@ -33,7 +35,6 @@ public class Message {
 //    Message(int messageType, int messageLength, int pieceIndex, FilePart filepart){
 //
 //    }
-
 
     /***
      * Default constructor for custom messages. Message type '100' represents custom message'
