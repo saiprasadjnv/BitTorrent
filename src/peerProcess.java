@@ -23,6 +23,7 @@ public class peerProcess {
     static String commonConfig = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/src/Common.cfg";
 //    static String HOMEDIR = System.getProperty("user.dir");
     static String HOMEDIR = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/";
+    public static Logger logger;
     private String peerHome;
     protected Vector<RemotePeerInfo> peerInfoVector;
     protected Vector<RemotePeerInfo> peersToConnect;
@@ -38,6 +39,7 @@ public class peerProcess {
     peerProcess(String peerId){
         this.peerId = peerId;
         peerHome = HOMEDIR + "peer_" + peerId + "/";
+        initializeLogger();
         getPeerInfo();
         initializeConfig();
         this.activeConnections = new Vector<TCPConnectionInfo>();
@@ -45,6 +47,14 @@ public class peerProcess {
         this.peersToTCPConnectionsMapping = new ConcurrentHashMap<String, TCPConnectionInfo>();
     }
 
+    private void initializeLogger() {
+        try {
+            logger = new Logger(this.peerId);
+            logger.start();
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+    }
 
     /**
     * Initialize the config parameters in the local datastructures. Read from the common.cfg file.
