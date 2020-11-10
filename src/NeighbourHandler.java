@@ -19,13 +19,13 @@ public class NeighbourHandler {
             public void run() {
                 setOptimisticNeighbour();
             }
-        }, 0, myProcess.optimisticUnchokingInterval*1000);
+        }, 0, myProcess.optimisticUnchokingInterval * 1000);
         t.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 setPreferredNeighbours();
             }
-        }, 0, myProcess.unchokingInterval*1000);
+        }, 0, myProcess.unchokingInterval * 1000);
     }
 
     private void setOptimisticNeighbour() {
@@ -68,12 +68,14 @@ public class NeighbourHandler {
                 this.messageHandler.preferredNeighbours.clear();
                 for (String pid : v) {
                     if (v.indexOf(pid) < endIndex) {
-                        this.messageHandler.unchokeStatus.put(pid, true);
                         this.messageHandler.preferredNeighbours.add(pid);
-                        this.messageHandler.CreateAndSendUnchokeMessage(this.messageHandler.peersToTCPConnectionsMapping.get(pid));
+                        if (!this.messageHandler.unchokeStatus.get(pid))
+                            this.messageHandler.CreateAndSendUnchokeMessage(this.messageHandler.peersToTCPConnectionsMapping.get(pid));
+                        this.messageHandler.unchokeStatus.put(pid, true);
                     } else {
+                        if (this.messageHandler.unchokeStatus.get(pid))
+                            this.messageHandler.CreateAndSendChokeMessage(this.messageHandler.peersToTCPConnectionsMapping.get(pid));
                         this.messageHandler.unchokeStatus.put(pid, false);
-                        this.messageHandler.CreateAndSendChokeMessage(this.messageHandler.peersToTCPConnectionsMapping.get(pid));
                     }
                 }
             } else {

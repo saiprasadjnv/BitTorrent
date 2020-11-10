@@ -10,9 +10,10 @@ public class MessageHandler implements Runnable {
 
     public AtomicReference<String> optimizedNeighbour;  // based on timer tasks
     public ConcurrentLinkedQueue<String> interestedPeers;   // based on interested messages
-    public ConcurrentHashMap<String, Boolean> unchokeStatus; // based on timer tasks
+    public ConcurrentHashMap<String, Boolean> unchokeStatus; // based on timer tasks; irrespective of optimizedNeighbour
     public ConcurrentLinkedQueue<String> preferredNeighbours;   // based on timer tasks
-    public ConcurrentHashMap<String, Boolean> canRequestStatus;  // based on choking and unchoking messages myProcess receives
+    public HashMap<String, Boolean> canRequestStatus;  // based on choking and unchoking messages myProcess receives
+    public HashMap<String, Integer> downloadRate;
 
     public NeighbourHandler neighbourHandler;
 
@@ -25,7 +26,8 @@ public class MessageHandler implements Runnable {
         this.interestedPeers = new ConcurrentLinkedQueue<>();
         this.unchokeStatus = new ConcurrentHashMap<>();
         this.preferredNeighbours = new ConcurrentLinkedQueue<>();
-        this.canRequestStatus = new ConcurrentHashMap<>();
+        this.canRequestStatus = new HashMap<>();
+        this.downloadRate = new HashMap<>();
     }
 
     /**
@@ -107,22 +109,27 @@ public class MessageHandler implements Runnable {
     }
 
     public void run() {
+        for (RemotePeerInfo p : this.myProcess.peersToConnect) {
+            this.canRequestStatus.put(p.peerId, false);
+            this.downloadRate.put(p.peerId,0);
+        }
         neighbourHandler.runUnchokeTasks();
         while (true) {
             if (!messageQueue.isEmpty()) {
                 Message newMessage = messageQueue.remove();
                 System.out.println("Received message type: " + newMessage.messageType + "; From: " + newMessage.messageOrigin.associatedPeerId);
-                String peerId;
+                String peerId = newMessage.messageOrigin.associatedPeerId;
                 switch (newMessage.messageType) {
                     case 0:
                         //Handle Choke message
+                        this.canRequestStatus.put(peerId, false);
                         break;
                     case 1:
                         //Handle Unchoke message
+                        this.canRequestStatus.put(peerId, true);
                         break;
                     case 2:
                         //Handle Interested message
-                        peerId = newMessage.messageOrigin.associatedPeerId;
                         if (myProcess.peerInfoMap.containsKey(peerId)) {
                             if (!interestedPeers.contains(peerId))
                                 interestedPeers.add(peerId);
@@ -130,14 +137,12 @@ public class MessageHandler implements Runnable {
                         break;
                     case 3:
                         //Handle Not interested message
-                        peerId = newMessage.messageOrigin.associatedPeerId;
                         interestedPeers.remove(peerId);
                         break;
                     case 4:
                         //Handle Have message
                         //Update the associatedPeerBitfield
                         int pieceIndex = newMessage.pieceIndex;
-                        peerId = newMessage.messageOrigin.associatedPeerId;
                         boolean[] currentBitField = myProcess.bitFieldsOfPeers.get(peerId);
                         currentBitField[pieceIndex] = true;
                         myProcess.bitFieldsOfPeers.put(peerId, currentBitField);

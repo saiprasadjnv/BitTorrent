@@ -19,7 +19,7 @@ public class peerProcess {
     protected boolean hasFile;
     public ConcurrentLinkedQueue<Message> messageQueue;
     public ConcurrentHashMap<String, TCPConnectionInfo> peersToTCPConnectionsMapping;
-    static String HOMEDIR = System.getProperty("user.dir");
+    static String HOMEDIR = System.getProperty("user.dir") + "/";
     //    static String HOMEDIR = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/";
     static String peerInfoConfig = "PeerInfo.cfg";
     static String commonConfig = "Common.cfg";
