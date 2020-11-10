@@ -8,14 +8,15 @@ public class Message implements Serializable {
     protected byte[] piece;
     public TCPConnectionInfo messageOrigin;
 
-    Message(byte messageType, int messageLength){
+    Message(byte messageType, int messageLength) {
         this.messageType = messageType;
         this.messageLength = messageLength;
     }
+
     /***
      * Constructor for "request" and "have" messages
      */
-    Message(byte messageType, int messageLength, int pieceIndex){
+    Message(byte messageType, int messageLength, int pieceIndex) {
         this.messageType = messageType;
         this.messageLength = messageLength;
         this.pieceIndex = pieceIndex;
@@ -24,7 +25,7 @@ public class Message implements Serializable {
     /***
      * Constructor for "bitfield" message
      */
-    Message(byte messageType, int messageLength, boolean[] bitField){
+    Message(byte messageType, int messageLength, boolean[] bitField) {
         this.messageType = messageType;
         this.messageLength = messageLength;
         this.bitField = bitField;
@@ -32,8 +33,8 @@ public class Message implements Serializable {
 
     /**
      * Constructor for "piece" message.
-     * */
-    Message(byte messageType, int messageLength, int pieceIndex, byte[] piece){
+     */
+    Message(byte messageType, int messageLength, int pieceIndex, byte[] piece) {
         this.messageType = messageType;
         this.messageLength = messageLength;
         this.pieceIndex = pieceIndex;
@@ -44,7 +45,7 @@ public class Message implements Serializable {
      * Default constructor for custom messages. Message type '100' represents custom message'
      * This is used to notify the peerProcess that a new Handshake message is received.
      * */
-    Message(){
+    Message() {
         this.messageType = 100;
     }
 

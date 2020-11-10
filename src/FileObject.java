@@ -14,7 +14,7 @@ public class FileObject {
     private int pieceSize;
     private String fileName;
 
-    FileObject(String fileName, int fileSize, int pieceSize) throws FileNotFoundException{
+    FileObject(String fileName, int fileSize, int pieceSize) throws FileNotFoundException {
         try {
             this.fileName = fileName;
             this.fileSize = fileSize;
@@ -23,7 +23,7 @@ public class FileObject {
             if (!file.exists()) {
                 throw new FileNotFoundException();
             }
-        }catch (FileNotFoundException ex){
+        } catch (FileNotFoundException ex) {
             System.out.println("File " + fileName + " does not exists!!");
             throw new FileNotFoundException();
         }
@@ -31,18 +31,18 @@ public class FileObject {
 
     /**
      * Read the piece with pieceIndex from the file.
-     * */
-    public byte[] readPiece(int pieceIndex){
+     */
+    public byte[] readPiece(int pieceIndex) {
         byte[] piece = new byte[pieceSize];
         try {
             int offSet = (pieceIndex - 1) * pieceSize;
             fileAccess.readFully(piece, offSet, pieceSize);
-        }catch(IOException ex){
+        } catch (IOException ex) {
             ex.printStackTrace();
-        }finally {
+        } finally {
             try {
                 fileAccess.close();
-            }catch (IOException ex){
+            } catch (IOException ex) {
 
             }
         }
@@ -52,14 +52,14 @@ public class FileObject {
     /***
      * Write piece to the file.
      **/
-    public boolean writePiece(int pieceIndex, byte[] piece){
-        try{
-            int offSet = (pieceIndex-1)*pieceSize;
+    public boolean writePiece(int pieceIndex, byte[] piece) {
+        try {
+            int offSet = (pieceIndex - 1) * pieceSize;
             fileAccess.write(piece, offSet, pieceSize);
             return true;
-        }catch(IOException ex){
+        } catch (IOException ex) {
             ex.printStackTrace();
-        }finally {
+        } finally {
             try {
                 fileAccess.close();
             } catch (IOException ex) {

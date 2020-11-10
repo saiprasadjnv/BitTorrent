@@ -1,101 +1,118 @@
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
-public class MessageHandler implements Runnable{
+public class MessageHandler implements Runnable {
     peerProcess myProcess;
     public ConcurrentLinkedQueue<Message> messageQueue;
     public ConcurrentHashMap<String, TCPConnectionInfo> peersToTCPConnectionsMapping;
 
-    MessageHandler(peerProcess myProcess){
+    public AtomicReference<String> optimizedNeighbour;  // based on timer tasks
+    public ConcurrentLinkedQueue<String> interestedPeers;   // based on interested messages
+    public ConcurrentHashMap<String, Boolean> unchokeStatus; // based on timer tasks
+    public ConcurrentLinkedQueue<String> preferredNeighbours;   // based on timer tasks
+    public ConcurrentHashMap<String, Boolean> canRequestStatus;  // based on choking and unchoking messages myProcess receives
+
+    public NeighbourHandler neighbourHandler;
+
+    MessageHandler(peerProcess myProcess) {
         this.myProcess = myProcess;
         this.peersToTCPConnectionsMapping = myProcess.peersToTCPConnectionsMapping;
         this.messageQueue = myProcess.messageQueue;
+        this.neighbourHandler = new NeighbourHandler(this);
+        this.optimizedNeighbour = new AtomicReference<>("");
+        this.interestedPeers = new ConcurrentLinkedQueue<>();
+        this.unchokeStatus = new ConcurrentHashMap<>();
+        this.preferredNeighbours = new ConcurrentLinkedQueue<>();
+        this.canRequestStatus = new ConcurrentHashMap<>();
     }
+
     /**
      * Each of the below CreateAndSend<MessageType>Message() function creates a message object with the required fields.
      * Then it sends the message to corresponding peer through the TCPConnection.
-     * */
+     */
 
-    private void CreateAndSendBitFieldMessage(TCPConnectionInfo associatedTCPConnection){
-        if(!associatedTCPConnection.isAlive()){
+    private void CreateAndSendBitFieldMessage(TCPConnectionInfo associatedTCPConnection) {
+        if (!associatedTCPConnection.isAlive()) {
             System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-        }else {
+        } else {
             Message bitFieldMessage = new Message((byte) 5, 1 + myProcess.myBitField.length, myProcess.myBitField);
             associatedTCPConnection.sendMessage(bitFieldMessage);
         }
     }
 
-    private void CreateAndSendHaveMessage(TCPConnectionInfo associatedTCPConnection, int pieceID){
+    private void CreateAndSendHaveMessage(TCPConnectionInfo associatedTCPConnection, int pieceID) {
         // Have message
-        if(!associatedTCPConnection.isAlive()){
+        if (!associatedTCPConnection.isAlive()) {
             System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-        }else {
+        } else {
             Message haveMessage = new Message((byte) 4, 5, pieceID);
             associatedTCPConnection.sendMessage(haveMessage);
         }
     }
 
-    private void CreateAndSendRequestMessage(TCPConnectionInfo associatedTCPConnection, int pieceID){
-        if(!associatedTCPConnection.isAlive()){
+    private void CreateAndSendRequestMessage(TCPConnectionInfo associatedTCPConnection, int pieceID) {
+        if (!associatedTCPConnection.isAlive()) {
             System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-        }else {
+        } else {
             Message requestMessage = new Message((byte) 6, 5, pieceID);
             associatedTCPConnection.sendMessage(requestMessage);
         }
     }
 
-    private void CreateAndSendInterestedMessage(TCPConnectionInfo associatedTCPConnection){
-        if(!associatedTCPConnection.isAlive()){
+    private void CreateAndSendInterestedMessage(TCPConnectionInfo associatedTCPConnection) {
+        if (!associatedTCPConnection.isAlive()) {
             System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-        }else {
+        } else {
             Message interestedMessage = new Message((byte) 2, 1);
             associatedTCPConnection.sendMessage(interestedMessage);
         }
     }
 
-    private void CreateAndSendNotInterestedMessage(TCPConnectionInfo associatedTCPConnection){
-        if(!associatedTCPConnection.isAlive()){
+    private void CreateAndSendNotInterestedMessage(TCPConnectionInfo associatedTCPConnection) {
+        if (!associatedTCPConnection.isAlive()) {
             System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-        }else {
+        } else {
             Message notInterestedMessage = new Message((byte) 3, 1);
             associatedTCPConnection.sendMessage(notInterestedMessage);
         }
     }
 
-    private void CreateAndSendChokeMessage(TCPConnectionInfo associatedTCPConnection){
-        if(!associatedTCPConnection.isAlive()){
+    protected void CreateAndSendChokeMessage(TCPConnectionInfo associatedTCPConnection) {
+        if (!associatedTCPConnection.isAlive()) {
             System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-        }else {
+        } else {
             Message chokeMessage = new Message((byte) 0, 1);
             associatedTCPConnection.sendMessage(chokeMessage);
         }
     }
 
-    private void CreateAndSendUnchokeMessage(TCPConnectionInfo associatedTCPConnection){
-        if(!associatedTCPConnection.isAlive()){
+    protected void CreateAndSendUnchokeMessage(TCPConnectionInfo associatedTCPConnection) {
+        if (!associatedTCPConnection.isAlive()) {
             System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-        }else {
+        } else {
             Message unChokeMessage = new Message((byte) 1, 1);
             associatedTCPConnection.sendMessage(unChokeMessage);
         }
     }
 
-    private void CreateAndSendPieceMessage(TCPConnectionInfo associatedTCPConnection, int pieceIndex, byte[] piece){
-        if(!associatedTCPConnection.isAlive()){
+    private void CreateAndSendPieceMessage(TCPConnectionInfo associatedTCPConnection, int pieceIndex, byte[] piece) {
+        if (!associatedTCPConnection.isAlive()) {
             System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-        }else{
-            Message pieceMessage = new Message((byte)7, 5 + myProcess.pieceSize, pieceIndex, piece);
+        } else {
+            Message pieceMessage = new Message((byte) 7, 5 + myProcess.pieceSize, pieceIndex, piece);
             associatedTCPConnection.sendMessage(pieceMessage);
         }
     }
 
-    public void run(){
-        while(true){
-            if(!messageQueue.isEmpty()) {
+    public void run() {
+        neighbourHandler.runUnchokeTasks();
+        while (true) {
+            if (!messageQueue.isEmpty()) {
                 Message newMessage = messageQueue.remove();
                 System.out.println("Received message type: " + newMessage.messageType + "; From: " + newMessage.messageOrigin.associatedPeerId);
+                String peerId;
                 switch (newMessage.messageType) {
                     case 0:
                         //Handle Choke message
@@ -105,40 +122,47 @@ public class MessageHandler implements Runnable{
                         break;
                     case 2:
                         //Handle Interested message
+                        peerId = newMessage.messageOrigin.associatedPeerId;
+                        if (myProcess.peerInfoMap.containsKey(peerId)) {
+                            if (!interestedPeers.contains(peerId))
+                                interestedPeers.add(peerId);
+                        }
                         break;
                     case 3:
                         //Handle Not interested message
+                        peerId = newMessage.messageOrigin.associatedPeerId;
+                        interestedPeers.remove(peerId);
                         break;
                     case 4:
                         //Handle Have message
                         //Update the associatedPeerBitfield
                         int pieceIndex = newMessage.pieceIndex;
-                        String peerID = newMessage.messageOrigin.associatedPeerId;
-                        boolean[] currentBitField = myProcess.bitFieldsOfPeers.get(peerID);
+                        peerId = newMessage.messageOrigin.associatedPeerId;
+                        boolean[] currentBitField = myProcess.bitFieldsOfPeers.get(peerId);
                         currentBitField[pieceIndex] = true;
-                        myProcess.bitFieldsOfPeers.put(peerID,currentBitField);
+                        myProcess.bitFieldsOfPeers.put(peerId, currentBitField);
                         //Check if you are interested in this piece.
-                        if(!myProcess.myBitField[pieceIndex]){
+                        if (!myProcess.myBitField[pieceIndex]) {
                             CreateAndSendInterestedMessage(newMessage.messageOrigin);
-                        }else{
+                        } else {
                             CreateAndSendNotInterestedMessage(newMessage.messageOrigin);
                         }
                         break;
                     case 5:
                         //Handle bitfield message
-                        String connectedPeer  = newMessage.messageOrigin.associatedPeerId;
+                        String connectedPeer = newMessage.messageOrigin.associatedPeerId;
                         System.out.println("Received bit-field message from :" + connectedPeer);
                         Utility.printBooleanArray(newMessage.bitField);
                         boolean interested = false;
-                        for(int i=0; i<myProcess.numberOfPieces; i++){
-                            if(newMessage.bitField[i] && !myProcess.myBitField[i]){
+                        for (int i = 0; i < myProcess.numberOfPieces; i++) {
+                            if (newMessage.bitField[i] && !myProcess.myBitField[i]) {
                                 interested = true;
                                 break;
                             }
                         }
-                        if(interested){
+                        if (interested) {
                             CreateAndSendInterestedMessage(newMessage.messageOrigin);
-                        }else{
+                        } else {
                             CreateAndSendNotInterestedMessage(newMessage.messageOrigin);
                         }
                         myProcess.bitFieldsOfPeers.put(connectedPeer, newMessage.bitField);
@@ -150,12 +174,12 @@ public class MessageHandler implements Runnable{
                         //Handle Piece message
                         byte[] piece = newMessage.piece;
                         pieceIndex = newMessage.pieceIndex;
-                        int offset = (pieceIndex-1)*myProcess.pieceSize;
+                        int offset = (pieceIndex - 1) * myProcess.pieceSize;
                         boolean pieceDownloaded = myProcess.myFileObject.writePiece(pieceIndex, piece);
-                        if(pieceDownloaded){
+                        if (pieceDownloaded) {
                             //update bitField
                             myProcess.myBitField[pieceIndex] = true;
-                            for(TCPConnectionInfo conn: myProcess.peersToTCPConnectionsMapping.values()){
+                            for (TCPConnectionInfo conn : myProcess.peersToTCPConnectionsMapping.values()) {
                                 CreateAndSendHaveMessage(conn, pieceIndex);
                             }
                         }
