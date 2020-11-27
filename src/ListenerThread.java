@@ -1,3 +1,4 @@
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -48,7 +49,7 @@ public class ListenerThread implements Runnable {
                 newMessage.messageOrigin = this.monitorConnection;
                 messageQueue.add(newMessage);
             }
-            while (true) {
+            while (!Thread.interrupted()) {
                 Message newMessage = (Message) inputStream.readObject();
                 newMessage.messageOrigin = this.monitorConnection;
                 messageQueue.add(newMessage);

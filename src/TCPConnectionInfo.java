@@ -23,13 +23,9 @@ public class TCPConnectionInfo {
         return associatedPeerId;
     }
 
-    public void sendMessage(Message message) {
-        try {
-            this.out.writeObject(message);
-            this.out.flush();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+    public void sendMessage(Message message) throws IOException {
+        this.out.writeObject(message);
+        this.out.flush();
     }
 
     public boolean isAlive() {
