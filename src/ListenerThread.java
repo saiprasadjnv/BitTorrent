@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Listener thread associated with a TCP connection. Collects all the messages to the listener port.
  * Places the messages in message queue.
  */
-
 public class ListenerThread implements Runnable {
     private TCPConnectionInfo monitorConnection;
     private ObjectOutputStream outputStream;
@@ -53,9 +52,10 @@ public class ListenerThread implements Runnable {
                 Message newMessage = (Message) inputStream.readObject();
                 newMessage.messageOrigin = this.monitorConnection;
                 messageQueue.add(newMessage);
+//                System.out.print("InListenerOf;");
             }
         } catch (IOException | ClassNotFoundException ex) {
-            ex.printStackTrace();
+//            ex.printStackTrace();
         }
     }
 }

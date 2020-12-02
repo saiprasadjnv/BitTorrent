@@ -44,6 +44,7 @@ public class peerProcess {
     protected ConcurrentSkipListSet<Integer> requestedPieces;
     //    protected MessageHandler myMessageHandler;
     FileObject myFileObject;
+
     /**
      * Constructor for the peerProcess object. Initializes the peerId.
      * */
@@ -51,8 +52,8 @@ public class peerProcess {
         this.peerId = peerId;
         peerHome = HOMEDIR + "peer_" + peerId + "/";
         initializeLogger();
-        getPeerInfo();
         initializeConfig();
+        getPeerInfo();
         activeConnections = new Vector<TCPConnectionInfo>();
         messageQueue = new ConcurrentLinkedQueue<Message>();
         peersToTCPConnectionsMapping = new ConcurrentHashMap<String, TCPConnectionInfo>();
@@ -69,6 +70,31 @@ public class peerProcess {
             logger.start();
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Initializes the Bit Field of the node and the File object based on the hasFile value.
+     * */
+    private void initializeBitFiledAndFile(){
+        try {
+            this.myBitField = new boolean[numberOfPieces];
+            File peerDir = new File(peerHome);
+            boolean mkdirRes = peerDir.mkdir();
+            String filePath = peerHome + fileName;
+            if (this.hasFile) {
+                Arrays.fill(myBitField, true);
+                //                System.out.println("My bit field: " + " Size: " + myBitField.length);
+                //                Utility.printBooleanArray(myBitField);
+            } else {
+                Arrays.fill(myBitField, false);
+                //Create an empty file to write pieces to.
+                File newFile = new File(filePath);
+                boolean createNewFileRes = newFile.createNewFile();
+            }
+            myFileObject = new FileObject(filePath, fileSize, pieceSize);
+        }catch(IOException ex){
+            System.out.println("Error in initializing file");
         }
     }
 
@@ -107,27 +133,11 @@ public class peerProcess {
                         throw new Exception("Invalid parameter in the file Common.cfg");
                 }
             }
-            bitFieldsOfPeers = new ConcurrentHashMap<>();
             numberOfPieces = fileSize / pieceSize;
             if (fileSize % pieceSize != 0) {
                 numberOfPieces++;
-                lastPieceSize = fileSize%pieceSize;
+                lastPieceSize = fileSize % pieceSize;
             }
-            this.myBitField = new boolean[numberOfPieces];
-            File peerDir = new File(peerHome);
-            boolean mkdirRes = peerDir.mkdir();
-            String filePath = peerHome + fileName;
-            if (this.hasFile) {
-                Arrays.fill(myBitField, true);
-//                System.out.println("My bit field: " + " Size: " + myBitField.length);
-//                Utility.printBooleanArray(myBitField);
-            } else {
-                Arrays.fill(myBitField, false);
-                //Create an empty file to write pieces to.
-                File newFile = new File(filePath);
-                boolean createNewFileRes = newFile.createNewFile();
-            }
-            myFileObject = new FileObject(filePath, fileSize, pieceSize);
             in.close();
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -142,9 +152,13 @@ public class peerProcess {
      * */
     void getPeerInfo() {
         String st;
+        bitFieldsOfPeers = new ConcurrentHashMap<>();
         peerInfoMap = new HashMap<String,RemotePeerInfo>();
         peersToConnect = new Vector<RemotePeerInfo>();
+
+        //TODO :: What is this??!!!!
         canRequestStatus = new ConcurrentHashMap<>();
+
         downloadRate = new ConcurrentHashMap<>();
         unchokeStatus = new ConcurrentHashMap<>();
         boolean makeConnections = true;
@@ -156,12 +170,16 @@ public class peerProcess {
                 if (newNode.peerId.equals(this.peerId)) {
                     this.listeningPort = Integer.parseInt(newNode.peerPort);
                     this.hasFile = newNode.hasFile;
+                    initializeBitFiledAndFile();
                     makeConnections = false;
                 } else {
                     peerInfoMap.put(newNode.peerId, newNode);
-                    canRequestStatus.put(newNode.peerId, true);
+                    canRequestStatus.put(newNode.peerId, false);
                     downloadRate.put(newNode.peerId, 0);
                     unchokeStatus.put(newNode.peerId, true);
+                    System.out.println(numberOfPieces);
+                    bitFieldsOfPeers.put(newNode.peerId, new boolean[numberOfPieces]);
+                    System.out.println("Updated the bit field of : " + newNode.peerId + " ; Length of the bitFieldsOfPeers: " + bitFieldsOfPeers.get(newNode.peerId).length);
                 }
                 if (makeConnections) {
                     peersToConnect.addElement(newNode);
@@ -180,7 +198,7 @@ public class peerProcess {
     public static void main(String[] args) {
         peerProcess peerNode = new peerProcess(args[0]);
         MessageHandler myMessageHandler = new MessageHandler(peerNode);
-        NeighbourHandler myNeighbourHandler = new NeighbourHandler(myMessageHandler);
+//        NeighbourHandler myNeighbourHandler = new NeighbourHandler(myMessageHandler);
 //       new Thread(myMessageHandler).start();
         Thread messageHandlerThread = new Thread(myMessageHandler);
         ArrayList<Thread> listenerThreads = new ArrayList<>();
@@ -195,6 +213,7 @@ public class peerProcess {
                 TCPConnectionInfo newTCPConnection = new TCPConnectionInfo(requestSocket, in, out, peerNode.peerId);
                 //Create a listener thread.
                 Runnable newListenerThread = new ListenerThread(newTCPConnection, peerNode.messageQueue, peerNode.peersToTCPConnectionsMapping);
+//                logger.writeLog(LogMessage.CLIENT_CONNECT,peerNode.);
                 Thread newListener = new Thread(newListenerThread);
                 listenerThreads.add(newListener);
                 newListener.start();
@@ -213,7 +232,7 @@ public class peerProcess {
                 new Thread(newThread).start();
                 peerNode.activeConnections.addElement(newTCPConnection);
                 remainingPeers--;
-//                System.out.println(remainingPeers);
+//              System.out.println(remainingPeers);
             }
             listener.close();
         } catch (Exception ex) {
@@ -237,17 +256,28 @@ public class peerProcess {
                     }
                 }
             }
+
+
+
         }
+        messageHandlerThread.interrupt();
         for(Thread t: listenerThreads){
             t.interrupt();
         }
-        messageHandlerThread.interrupt();
         peerNode.myFileObject.cleanUp();
-        System.out.println("Terminating Program");
+        System.out.println(peerNode.bitFieldsOfPeers.keySet().toString());
+//        for(String peer: peerNode.bitFieldsOfPeers.keySet()) {
+//            System.out.println("************************************************" + peer + "***************************************");
+//            Utility.printBooleanArray(peerNode.bitFieldsOfPeers.get(peer));
+//            System.out.println("************************************************" + peer + "***************************************");
+//        }
         try {
             logger.stop();
         }catch (Exception ex){
             ex.printStackTrace();
         }
+        System.out.println("Terminating Program");
+        System.out.println("Terminating Program");
+        System.exit(0);
     }
 }

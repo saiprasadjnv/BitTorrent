@@ -1,3 +1,5 @@
+import jdk.jshell.execution.Util;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -127,9 +129,10 @@ public class MessageHandler implements Runnable {
 
     public void run() {
         while (!Thread.interrupted()) {
+//            System.out.print("In MessageHandler");
             if (!messageQueue.isEmpty()) {
                 Message newMessage = messageQueue.remove();
-                //System.out.println("Received message type: " + newMessage.messageType + "; From: " + newMessage.messageOrigin.associatedPeerId);
+//                System.out.println("Received message type: " + newMessage.messageType + "; From: " + newMessage.messageOrigin.associatedPeerId);
                 String peerId = newMessage.messageOrigin.associatedPeerId;
                 switch (newMessage.messageType) {
                     case 0:
@@ -157,16 +160,18 @@ public class MessageHandler implements Runnable {
                     case 3:
                         //Handle Not interested message
                         myProcess.interestedPeers.remove(peerId);
-
                         break;
                     case 4:
                         //Handle Have message
                         //Update the associatedPeerBitfield
                         int pieceIndex = newMessage.pieceIndex;
                         boolean[] currentBitField = myProcess.bitFieldsOfPeers.get(peerId);
+//                        System.out.println(currentBitField.length + ": " + peerId);
                         currentBitField[pieceIndex-1] = true;
                         myProcess.bitFieldsOfPeers.put(peerId, currentBitField);
                         //Check if you are interested in this piece.
+
+
                         if (!myProcess.myBitField[pieceIndex-1]) {
                             CreateAndSendInterestedMessage(newMessage.messageOrigin);
                         } else {
@@ -232,7 +237,7 @@ public class MessageHandler implements Runnable {
                         System.out.println("Invalid Message type received");
                 }
             }
-
         }
+        System.out.println("Exiting from Message Handler");
     }
 }

@@ -5,7 +5,6 @@ import java.io.OutputStreamWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-
 public class Logger {
     private String peerId;
     private String logFileName;

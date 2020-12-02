@@ -5,7 +5,6 @@ public class NeighbourHandler {
     peerProcess myProcess;
     int numPreferredNeighbours;
     Timer t;
-
     public NeighbourHandler(MessageHandler messageHandler) {
         this.messageHandler = messageHandler;
         this.myProcess = messageHandler.myProcess;
