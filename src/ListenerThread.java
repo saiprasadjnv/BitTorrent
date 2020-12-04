@@ -54,7 +54,7 @@ public class ListenerThread implements Runnable {
                 messageQueue.add(newMessage);
 //                //System.out.print("InListenerOf;");
             }
-        } catch (IOException | ClassNotFoundException ex) {
+        } catch (IOException | ClassNotFoundException|NullPointerException ex) {
 //            ex.printStackTrace();
         } catch (ClassCastException ex){
             //Ignore broken messages
