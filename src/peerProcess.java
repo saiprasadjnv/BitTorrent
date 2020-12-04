@@ -23,7 +23,7 @@ public class peerProcess {
     protected boolean hasFile;
     public ConcurrentLinkedQueue<Message> messageQueue;
     public ConcurrentHashMap<String, TCPConnectionInfo> peersToTCPConnectionsMapping;
-//   static String HOMEDIR = System.getProperty("user.dir") + "/";
+//   static String HOMEDIR = //System.getProperty("user.dir") + "/";
     static String HOMEDIR = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/";
     static String peerInfoConfig = HOMEDIR + "src/"+ "PeerInfo.cfg";
     static String commonConfig = HOMEDIR + "src/"+ "Common.cfg";
@@ -42,6 +42,7 @@ public class peerProcess {
     protected ConcurrentHashMap<String, Boolean> canRequestStatus;  // based on choking and unchoking messages myProcess receives
     protected ConcurrentHashMap<String, Integer> downloadRate;
     protected ConcurrentSkipListSet<Integer> requestedPieces;
+    protected ConcurrentSkipListSet<Integer> downloadedPieces;
     //    protected MessageHandler myMessageHandler;
     FileObject myFileObject;
 
@@ -59,6 +60,7 @@ public class peerProcess {
         peersToTCPConnectionsMapping = new ConcurrentHashMap<String, TCPConnectionInfo>();
         requestedPieces = new ConcurrentSkipListSet<>();
         interestedPeers = new ConcurrentLinkedQueue<>();
+        downloadedPieces = new ConcurrentSkipListSet<>();
     }
 
     /**
@@ -84,7 +86,7 @@ public class peerProcess {
             String filePath = peerHome + fileName;
             if (this.hasFile) {
                 Arrays.fill(myBitField, true);
-                //                System.out.println("My bit field: " + " Size: " + myBitField.length);
+                //                //System.out.println("My bit field: " + " Size: " + myBitField.length);
                 //                Utility.printBooleanArray(myBitField);
             } else {
                 Arrays.fill(myBitField, false);
@@ -94,7 +96,7 @@ public class peerProcess {
             }
             myFileObject = new FileObject(filePath, fileSize, pieceSize);
         }catch(IOException ex){
-            System.out.println("Error in initializing file");
+            //System.out.println("Error in initializing file");
         }
     }
 
@@ -177,9 +179,9 @@ public class peerProcess {
                     canRequestStatus.put(newNode.peerId, false);
                     downloadRate.put(newNode.peerId, 0);
                     unchokeStatus.put(newNode.peerId, true);
-                    System.out.println(numberOfPieces);
+                    //System.out.println(numberOfPieces);
                     bitFieldsOfPeers.put(newNode.peerId, new boolean[numberOfPieces]);
-                    System.out.println("Updated the bit field of : " + newNode.peerId + " ; Length of the bitFieldsOfPeers: " + bitFieldsOfPeers.get(newNode.peerId).length);
+                    //System.out.println("Updated the bit field of : " + newNode.peerId + " ; Length of the bitFieldsOfPeers: " + bitFieldsOfPeers.get(newNode.peerId).length);
                 }
                 if (makeConnections) {
                     peersToConnect.addElement(newNode);
@@ -198,7 +200,8 @@ public class peerProcess {
     public static void main(String[] args) {
         peerProcess peerNode = new peerProcess(args[0]);
         MessageHandler myMessageHandler = new MessageHandler(peerNode);
-//        NeighbourHandler myNeighbourHandler = new NeighbourHandler(myMessageHandler);
+        NeighbourHandler myNeighbourHandler = new NeighbourHandler(myMessageHandler);
+        myNeighbourHandler.runUnchokeTasks();
 //       new Thread(myMessageHandler).start();
         Thread messageHandlerThread = new Thread(myMessageHandler);
         ArrayList<Thread> listenerThreads = new ArrayList<>();
@@ -232,7 +235,7 @@ public class peerProcess {
                 new Thread(newThread).start();
                 peerNode.activeConnections.addElement(newTCPConnection);
                 remainingPeers--;
-//              System.out.println(remainingPeers);
+//              //System.out.println(remainingPeers);
             }
             listener.close();
         } catch (Exception ex) {
@@ -242,13 +245,14 @@ public class peerProcess {
         while (!isFileSharedToAllPeers) {
             //Wait until the peer sharing process is finished
             isFileSharedToAllPeers = true;
-            for(boolean hasPiece: peerNode.myBitField){
-                if(!hasPiece){
+            for(boolean hasPiece: peerNode.myBitField) {
+                if (!hasPiece) {
                     isFileSharedToAllPeers = false;
                     break;
                 }
             }
             for (boolean[] bitField : peerNode.bitFieldsOfPeers.values()) {
+//                //System.out.println("Pieces not yet shared");
                 for (boolean hasPiece : bitField) {
                     if (!hasPiece) {
                         isFileSharedToAllPeers = false;
@@ -265,11 +269,11 @@ public class peerProcess {
             t.interrupt();
         }
         peerNode.myFileObject.cleanUp();
-        System.out.println(peerNode.bitFieldsOfPeers.keySet().toString());
+        //System.out.println(peerNode.bitFieldsOfPeers.keySet().toString());
 //        for(String peer: peerNode.bitFieldsOfPeers.keySet()) {
-//            System.out.println("************************************************" + peer + "***************************************");
+//            //System.out.println("************************************************" + peer + "***************************************");
 //            Utility.printBooleanArray(peerNode.bitFieldsOfPeers.get(peer));
-//            System.out.println("************************************************" + peer + "***************************************");
+//            //System.out.println("************************************************" + peer + "***************************************");
 //        }
         try {
             logger.stop();
@@ -278,6 +282,6 @@ public class peerProcess {
         }
         System.out.println("Terminating Program");
         System.out.println("Terminating Program");
-        System.exit(0);
+        //System.exit(0);
     }
 }

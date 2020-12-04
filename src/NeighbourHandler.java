@@ -5,6 +5,7 @@ public class NeighbourHandler {
     peerProcess myProcess;
     int numPreferredNeighbours;
     Timer t;
+
     public NeighbourHandler(MessageHandler messageHandler) {
         this.messageHandler = messageHandler;
         this.myProcess = messageHandler.myProcess;
@@ -32,7 +33,9 @@ public class NeighbourHandler {
     }
 
     private void setPreferredNeighbours() {
-
+        for(Map.Entry x: myProcess.peersToTCPConnectionsMapping.entrySet()){
+            messageHandler.CreateAndSendUnchokeMessage((TCPConnectionInfo) x.getValue());
+        }
     }
 
     public void stopTasks() {

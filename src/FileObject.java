@@ -19,15 +19,15 @@ public class FileObject {
             this.fileName = fileName;
             this.fileSize = fileSize;
             this.pieceSize = pieceSize;
-            System.out.println(fileName);
+            //System.out.println(fileName);
             file = new File(fileName);
             if (!file.exists()) {
                 throw new FileNotFoundException();
             }
             fileAccess = new RandomAccessFile(file, "rw");
-//            System.out.println(fileAccess.length());
+//            //System.out.println(fileAccess.length());
         } catch (FileNotFoundException ex) {
-//            System.out.println("File " + fileName + " does not exists!!");
+//            //System.out.println("File " + fileName + " does not exists!!");
             throw new FileNotFoundException();
         }catch (IOException ex){
             ex.printStackTrace();
@@ -50,7 +50,7 @@ public class FileObject {
             int offSet = (pieceIndex - 1) * pieceSize;
             fileAccess.seek(offSet);
             fileAccess.read(piece, 0, size);
-//            System.out.println(offSet  + " " + size + " " + piece.length);
+//            //System.out.println(offSet  + " " + size + " " + piece.length);
         } catch (IOException ex) {
             ex.printStackTrace();
             try {

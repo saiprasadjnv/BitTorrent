@@ -52,7 +52,7 @@ public class ListenerThread implements Runnable {
                 Message newMessage = (Message) inputStream.readObject();
                 newMessage.messageOrigin = this.monitorConnection;
                 messageQueue.add(newMessage);
-//                System.out.print("InListenerOf;");
+//                //System.out.print("InListenerOf;");
             }
         } catch (IOException | ClassNotFoundException ex) {
 //            ex.printStackTrace();

@@ -2,3 +2,35 @@
 2. Logging
 3. Testing for the config file
 4. Program termination
+
+
+
+
+boolean[] bitField = myProcess.bitFieldsOfPeers.get(associatedPeer);
+            ArrayList<Integer> interestingPieces = new ArrayList<>();
+            for (int pieceIndex = 1; pieceIndex <= myProcess.numberOfPieces; pieceIndex++) {
+                if (!myProcess.myBitField[pieceIndex - 1] && bitField[pieceIndex - 1] && !myProcess.requestedPieces.contains(pieceIndex)) {
+                    interestingPieces.add(pieceIndex);
+                }
+            }
+            if(interestingPieces.size()==0) {
+                return;
+            }
+            while(myProcess.canRequestStatus.get(associatedPeer)){
+                    if (interestingPieces.size() > 0) {
+                        boolean pieceNotRequested = true;
+                        Random random = new Random();
+                        int requestPiece = -1;
+                        do {
+                            int randomIndex = random.nextInt(interestingPieces.size());
+                            requestPiece = interestingPieces.get(randomIndex);
+                        } while (myProcess.requestedPieces.contains(requestPiece) || myProcess.downloadedPieces.contains(requestPiece));
+                        myMessageHandler.CreateAndSendRequestMessage(associatedTCPConnection, requestPiece);
+                        myProcess.requestedPieces.add(requestPiece);
+                        //System.out.println("Sent piece request " + requestPiece + " to " + associatedPeer);
+                        while (!myProcess.downloadedPieces.contains(requestPiece));
+                        //System.out.println("Downloaded piece " + requestPiece + " from " + associatedPeer);
+
+                    }
+                }
+            System.out.println("Ended thread for :" + associatedPeer);
