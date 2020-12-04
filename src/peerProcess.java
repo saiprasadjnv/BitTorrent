@@ -39,10 +39,10 @@ public class peerProcess {
     protected ConcurrentLinkedQueue<String> interestedPeers;   // based on interested messages
     protected ConcurrentHashMap<String, Boolean> unchokeStatus; // based on timer tasks; irrespective of optimizedNeighbour
     protected ConcurrentLinkedQueue<String> preferredNeighbours;   // based on timer tasks
-    protected ConcurrentHashMap<String, Boolean> canRequestStatus;  // based on choking and unchoking messages myProcess receives
     protected ConcurrentHashMap<String, Integer> downloadRate;
-    protected ConcurrentSkipListSet<Integer> requestedPieces;
-    protected ConcurrentSkipListSet<Integer> downloadedPieces;
+    protected HashMap<String, Boolean> canRequestStatus;  // based on choking and unchoking messages myProcess receives
+    protected HashSet<Integer> requestedPieces;
+    protected HashSet<Integer> downloadedPieces;
     //    protected MessageHandler myMessageHandler;
     FileObject myFileObject;
 
@@ -55,12 +55,12 @@ public class peerProcess {
         initializeLogger();
         initializeConfig();
         getPeerInfo();
-        activeConnections = new Vector<TCPConnectionInfo>();
-        messageQueue = new ConcurrentLinkedQueue<Message>();
-        peersToTCPConnectionsMapping = new ConcurrentHashMap<String, TCPConnectionInfo>();
-        requestedPieces = new ConcurrentSkipListSet<>();
+        activeConnections = new Vector<>();
+        messageQueue = new ConcurrentLinkedQueue<>();
+        peersToTCPConnectionsMapping = new ConcurrentHashMap<>();
         interestedPeers = new ConcurrentLinkedQueue<>();
-        downloadedPieces = new ConcurrentSkipListSet<>();
+        requestedPieces = new HashSet<>();
+        downloadedPieces = new HashSet<>();
     }
 
     /**
@@ -155,11 +155,11 @@ public class peerProcess {
     void getPeerInfo() {
         String st;
         bitFieldsOfPeers = new ConcurrentHashMap<>();
-        peerInfoMap = new HashMap<String,RemotePeerInfo>();
-        peersToConnect = new Vector<RemotePeerInfo>();
+        peerInfoMap = new HashMap<>();
+        peersToConnect = new Vector<>();
 
         //TODO :: What is this??!!!!
-        canRequestStatus = new ConcurrentHashMap<>();
+        canRequestStatus = new HashMap<>();
 
         downloadRate = new ConcurrentHashMap<>();
         unchokeStatus = new ConcurrentHashMap<>();
@@ -260,21 +260,12 @@ public class peerProcess {
                     }
                 }
             }
-
-
-
         }
         messageHandlerThread.interrupt();
         for(Thread t: listenerThreads){
             t.interrupt();
         }
         peerNode.myFileObject.cleanUp();
-        //System.out.println(peerNode.bitFieldsOfPeers.keySet().toString());
-//        for(String peer: peerNode.bitFieldsOfPeers.keySet()) {
-//            //System.out.println("************************************************" + peer + "***************************************");
-//            Utility.printBooleanArray(peerNode.bitFieldsOfPeers.get(peer));
-//            //System.out.println("************************************************" + peer + "***************************************");
-//        }
         try {
             logger.stop();
         }catch (Exception ex){
@@ -282,6 +273,6 @@ public class peerProcess {
         }
         System.out.println("Terminating Program");
         System.out.println("Terminating Program");
-        //System.exit(0);
+        System.exit(0);
     }
 }

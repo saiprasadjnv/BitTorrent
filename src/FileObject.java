@@ -28,7 +28,6 @@ public class FileObject {
 //            //System.out.println(fileAccess.length());
         } catch (FileNotFoundException ex) {
 //            //System.out.println("File " + fileName + " does not exists!!");
-            throw new FileNotFoundException();
         }catch (IOException ex){
             ex.printStackTrace();
         }
@@ -47,7 +46,7 @@ public class FileObject {
     public byte[] readPiece(int pieceIndex, int size) {
         byte[] piece = new byte[size];
         try {
-            int offSet = (pieceIndex - 1) * pieceSize;
+            long offSet = (pieceIndex - 1) * pieceSize;
             fileAccess.seek(offSet);
             fileAccess.read(piece, 0, size);
 //            //System.out.println(offSet  + " " + size + " " + piece.length);
@@ -66,7 +65,7 @@ public class FileObject {
      **/
     public boolean writePiece(int pieceIndex, byte[] piece, int size) {
         try {
-            int offSet = (pieceIndex - 1) * pieceSize;
+            long offSet = (pieceIndex - 1) * pieceSize;
             fileAccess.seek(offSet);
             fileAccess.write(piece, 0, size);
             return true;

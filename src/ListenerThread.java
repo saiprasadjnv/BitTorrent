@@ -56,6 +56,8 @@ public class ListenerThread implements Runnable {
             }
         } catch (IOException | ClassNotFoundException ex) {
 //            ex.printStackTrace();
+        } catch (ClassCastException ex){
+            //Ignore broken messages
         }
     }
 }

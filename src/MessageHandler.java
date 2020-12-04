@@ -29,9 +29,7 @@ public class MessageHandler implements Runnable {
 
     private void CreateAndSendBitFieldMessage(TCPConnectionInfo associatedTCPConnection) {
         try {
-            if (!associatedTCPConnection.isAlive()) {
-                //System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-            } else {
+            if (associatedTCPConnection.isAlive()) {
                 Message bitFieldMessage = new Message((byte) 5, 1 + myProcess.myBitField.length, myProcess.myBitField);
                 associatedTCPConnection.sendMessage(bitFieldMessage);
             }
@@ -43,9 +41,7 @@ public class MessageHandler implements Runnable {
     private void CreateAndSendHaveMessage(TCPConnectionInfo associatedTCPConnection, int pieceID) {
         // Have message
         try {
-            if (!associatedTCPConnection.isAlive()) {
-                //System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-            } else {
+            if (associatedTCPConnection.isAlive()) {
                 Message haveMessage = new Message((byte) 4, 5, pieceID);
                 associatedTCPConnection.sendMessage(haveMessage);
             }
@@ -56,9 +52,7 @@ public class MessageHandler implements Runnable {
 
     private void CreateAndSendRequestMessage(TCPConnectionInfo associatedTCPConnection, int pieceID) {
         try {
-            if (!associatedTCPConnection.isAlive()) {
-                //System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-            } else {
+            if (associatedTCPConnection.isAlive()) {
                 Message requestMessage = new Message((byte) 6, 5, pieceID);
                 associatedTCPConnection.sendMessage(requestMessage);
             }
@@ -69,9 +63,7 @@ public class MessageHandler implements Runnable {
 
     private void CreateAndSendInterestedMessage(TCPConnectionInfo associatedTCPConnection) {
         try {
-            if (!associatedTCPConnection.isAlive()) {
-                //System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-            } else {
+            if (associatedTCPConnection.isAlive()) {
                 Message interestedMessage = new Message((byte) 2, 1);
                 associatedTCPConnection.sendMessage(interestedMessage);
             }
@@ -82,9 +74,7 @@ public class MessageHandler implements Runnable {
 
     private void CreateAndSendNotInterestedMessage(TCPConnectionInfo associatedTCPConnection) {
         try {
-            if (!associatedTCPConnection.isAlive()) {
-                //System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-            } else {
+            if (associatedTCPConnection.isAlive()) {
                 Message notInterestedMessage = new Message((byte) 3, 1);
                 associatedTCPConnection.sendMessage(notInterestedMessage);
             }
@@ -95,9 +85,7 @@ public class MessageHandler implements Runnable {
 
     protected void CreateAndSendChokeMessage(TCPConnectionInfo associatedTCPConnection) {
         try {
-            if (!associatedTCPConnection.isAlive()) {
-                //System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-            } else {
+            if (associatedTCPConnection.isAlive()) {
                 Message chokeMessage = new Message((byte) 0, 1);
                 associatedTCPConnection.sendMessage(chokeMessage);
             }
@@ -108,9 +96,7 @@ public class MessageHandler implements Runnable {
 
     protected void CreateAndSendUnchokeMessage(TCPConnectionInfo associatedTCPConnection) {
         try {
-            if (!associatedTCPConnection.isAlive()) {
-                //System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-            } else {
+            if (associatedTCPConnection.isAlive()) {
                 Message unChokeMessage = new Message((byte) 1, 1);
                 associatedTCPConnection.sendMessage(unChokeMessage);
             }
@@ -121,9 +107,7 @@ public class MessageHandler implements Runnable {
 
     private void CreateAndSendPieceMessage(TCPConnectionInfo associatedTCPConnection, int pieceIndex, byte[] piece) {
         try {
-            if (!associatedTCPConnection.isAlive()) {
-                //System.out.println("TCP Connection to peer " + associatedTCPConnection.myPeerID + " is not alive!!");
-            } else {
+            if (associatedTCPConnection.isAlive()) {
                 Message pieceMessage = new Message((byte) 7, 5 + myProcess.pieceSize, pieceIndex, piece);
                 associatedTCPConnection.sendMessage(pieceMessage);
             }
@@ -144,7 +128,7 @@ public class MessageHandler implements Runnable {
             return -1;
         }
         Random random = new Random();
-        int requestPiece = -1;
+        int requestPiece;
         do {
             int randomIndex = random.nextInt(interestingPieces.size());
             requestPiece = interestingPieces.get(randomIndex);
@@ -225,7 +209,7 @@ public class MessageHandler implements Runnable {
                         if(myProcess.unchokeStatus.get(peerId) && requestedPiece>0 && requestedPiece<= myProcess.numberOfPieces ){
                             int pieceSize = myProcess.pieceSize;
                             if(requestedPiece== myProcess.numberOfPieces){
-                                pieceIndex = myProcess.lastPieceSize;
+                                pieceSize = myProcess.lastPieceSize;
                             }
                             byte[] piece = myProcess.myFileObject.readPiece(requestedPiece, pieceSize);
                             CreateAndSendPieceMessage(newMessage.messageOrigin,requestedPiece, piece);
@@ -237,16 +221,17 @@ public class MessageHandler implements Runnable {
                         if(!myProcess.downloadedPieces.contains(pieceIndex)){
                             //System.out.println("Received piece " + pieceIndex + " from "+ peerId);
                             int offset = (pieceIndex - 1) * myProcess.pieceSize;
-                            int piecesize = myProcess.pieceSize;
+                            int pieceSize = myProcess.pieceSize;
                             if (pieceIndex == myProcess.numberOfPieces) {
-                                piecesize = myProcess.lastPieceSize;
+                                pieceSize = myProcess.lastPieceSize;
                             }
                             //System.out.println("Writing piece " + pieceIndex + " to file!! from " + peerId);
-                            boolean pieceDownloaded = myProcess.myFileObject.writePiece(pieceIndex, newMessage.piece, piecesize);
+                            boolean pieceDownloaded = myProcess.myFileObject.writePiece(pieceIndex, newMessage.piece, pieceSize);
                             //System.out.println("Downloaded piece successfully!! : " + peerId + ":::" + pieceIndex);
                             if (pieceDownloaded) {
                                 //update bitField
                                 myProcess.downloadedPieces.add(pieceIndex);
+                                myProcess.downloadRate.put(peerId, myProcess.downloadRate.get(peerId)+1);
                                 System.out.println("Received "+ myProcess.downloadedPieces.size() + " pieces out of " + myProcess.numberOfPieces + " pieces");
                                 System.out.println("Requested "+ myProcess.requestedPieces.size() + " pieces out of " + myProcess.numberOfPieces + " pieces");
                                 myProcess.myBitField[pieceIndex - 1] = true;
