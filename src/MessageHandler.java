@@ -12,7 +12,7 @@ public class MessageHandler implements Runnable {
     public ConcurrentLinkedQueue<Message> messageQueue;
     public ConcurrentHashMap<String, TCPConnectionInfo> peersToTCPConnectionsMapping;
     public HashSet<Integer> requestedPieces;
-    public  HashSet<Integer> receivedPieces;
+    public HashSet<Integer> receivedPieces;
 
     MessageHandler(peerProcess myProcess) {
         this.myProcess = myProcess;
@@ -33,7 +33,7 @@ public class MessageHandler implements Runnable {
                 Message bitFieldMessage = new Message((byte) 5, 1 + myProcess.myBitField.length, myProcess.myBitField);
                 associatedTCPConnection.sendMessage(bitFieldMessage);
             }
-        }catch (NullPointerException|IOException ex){
+        } catch (NullPointerException | IOException ex) {
             ex.printStackTrace();
         }
     }
@@ -45,7 +45,7 @@ public class MessageHandler implements Runnable {
                 Message haveMessage = new Message((byte) 4, 5, pieceID);
                 associatedTCPConnection.sendMessage(haveMessage);
             }
-        }catch (NullPointerException|IOException ex){
+        } catch (NullPointerException | IOException ex) {
             ex.printStackTrace();
         }
     }
@@ -56,7 +56,7 @@ public class MessageHandler implements Runnable {
                 Message requestMessage = new Message((byte) 6, 5, pieceID);
                 associatedTCPConnection.sendMessage(requestMessage);
             }
-        }catch (NullPointerException|IOException ex){
+        } catch (NullPointerException | IOException ex) {
             ex.printStackTrace();
         }
     }
@@ -67,7 +67,7 @@ public class MessageHandler implements Runnable {
                 Message interestedMessage = new Message((byte) 2, 1);
                 associatedTCPConnection.sendMessage(interestedMessage);
             }
-        }catch (NullPointerException|IOException ex){
+        } catch (NullPointerException | IOException ex) {
             ex.printStackTrace();
         }
     }
@@ -78,7 +78,7 @@ public class MessageHandler implements Runnable {
                 Message notInterestedMessage = new Message((byte) 3, 1);
                 associatedTCPConnection.sendMessage(notInterestedMessage);
             }
-        }catch (NullPointerException|IOException ex){
+        } catch (NullPointerException | IOException ex) {
             ex.printStackTrace();
         }
     }
@@ -89,7 +89,7 @@ public class MessageHandler implements Runnable {
                 Message chokeMessage = new Message((byte) 0, 1);
                 associatedTCPConnection.sendMessage(chokeMessage);
             }
-        }catch (NullPointerException|IOException ex){
+        } catch (NullPointerException | IOException ex) {
             ex.printStackTrace();
         }
     }
@@ -100,7 +100,7 @@ public class MessageHandler implements Runnable {
                 Message unChokeMessage = new Message((byte) 1, 1);
                 associatedTCPConnection.sendMessage(unChokeMessage);
             }
-        } catch (NullPointerException|IOException ex){
+        } catch (NullPointerException | IOException ex) {
             ex.printStackTrace();
         }
     }
@@ -111,12 +111,12 @@ public class MessageHandler implements Runnable {
                 Message pieceMessage = new Message((byte) 7, 5 + myProcess.pieceSize, pieceIndex, piece);
                 associatedTCPConnection.sendMessage(pieceMessage);
             }
-        }catch (NullPointerException| IOException ex){
+        } catch (NullPointerException | IOException ex) {
             ex.printStackTrace();
         }
     }
 
-    private int getARandomInterestingPiece(String associatedPeer){
+    private int getARandomInterestingPiece(String associatedPeer) {
         boolean[] bitField = myProcess.bitFieldsOfPeers.get(associatedPeer);
         ArrayList<Integer> interestingPieces = new ArrayList<>();
         for (int pieceIndex = 1; pieceIndex <= myProcess.numberOfPieces; pieceIndex++) {
@@ -124,7 +124,7 @@ public class MessageHandler implements Runnable {
                 interestingPieces.add(pieceIndex);
             }
         }
-        if(interestingPieces.size()==0) {
+        if (interestingPieces.size() == 0) {
             return -1;
         }
         Random random = new Random();
@@ -146,21 +146,24 @@ public class MessageHandler implements Runnable {
                 switch (newMessage.messageType) {
                     case 0:
                         //Handle Choke message
+                        peerProcess.logger.writeLog(LogMessage.CHOKING, new String[]{peerId});
                         myProcess.canRequestStatus.put(peerId, false);
                         break;
                     case 1:
                         //Handle Unchoke message
-                    if(!myProcess.canRequestStatus.get(peerId)){
-                        myProcess.canRequestStatus.put(peerId, true);
-                        int requestPiece = getARandomInterestingPiece(peerId);
-                        if(requestPiece>0 && !myProcess.requestedPieces.contains(requestPiece)) {
-                            myProcess.requestedPieces.add(requestPiece);
-                            CreateAndSendRequestMessage(newMessage.messageOrigin, requestPiece);
+                        peerProcess.logger.writeLog(LogMessage.UNCHOKING, new String[]{peerId});
+                        if (!myProcess.canRequestStatus.get(peerId)) {
+                            myProcess.canRequestStatus.put(peerId, true);
+                            int requestPiece = getARandomInterestingPiece(peerId);
+                            if (requestPiece > 0 && !myProcess.requestedPieces.contains(requestPiece)) {
+                                myProcess.requestedPieces.add(requestPiece);
+                                CreateAndSendRequestMessage(newMessage.messageOrigin, requestPiece);
+                            }
                         }
-                    }
                         break;
                     case 2:
                         //Handle Interested message
+                        peerProcess.logger.writeLog(LogMessage.RECEIVE_INTERESTED,new String[]{peerId});
                         if (myProcess.peerInfoMap.containsKey(peerId)) {
                             if (!myProcess.interestedPeers.contains(peerId))
                                 myProcess.interestedPeers.add(peerId);
@@ -168,19 +171,21 @@ public class MessageHandler implements Runnable {
                         break;
                     case 3:
                         //Handle Not interested message
+                        peerProcess.logger.writeLog(LogMessage.RECEIVE_NOT_INTERESTED,new String[]{peerId});
                         myProcess.interestedPeers.remove(peerId);
                         break;
                     case 4:
                         //Handle Have message
                         //Update the associatedPeerBitfield
                         int pieceIndex = newMessage.pieceIndex;
+                        peerProcess.logger.writeLog(LogMessage.RECEIVE_HAVE, new String[]{peerId, Integer.toString(pieceIndex)});
                         boolean[] currentBitField = myProcess.bitFieldsOfPeers.get(peerId);
 //                        //System.out.println(currentBitField.length + ": " + peerId);
-                        currentBitField[pieceIndex-1] = true;
+                        currentBitField[pieceIndex - 1] = true;
                         myProcess.bitFieldsOfPeers.put(peerId, currentBitField);
                         //Check if you are interested in this piece.
 
-                        if (!myProcess.myBitField[pieceIndex-1]) {
+                        if (!myProcess.myBitField[pieceIndex - 1]) {
                             CreateAndSendInterestedMessage(newMessage.messageOrigin);
                         } else {
                             CreateAndSendNotInterestedMessage(newMessage.messageOrigin);
@@ -206,19 +211,19 @@ public class MessageHandler implements Runnable {
                     case 6:
                         //Handle request message
                         int requestedPiece = newMessage.pieceIndex;
-                        if(myProcess.unchokeStatus.get(peerId) && requestedPiece>0 && requestedPiece<= myProcess.numberOfPieces ){
+                        if (myProcess.unchokeStatus.get(peerId) && requestedPiece > 0 && requestedPiece <= myProcess.numberOfPieces) {
                             int pieceSize = myProcess.pieceSize;
-                            if(requestedPiece== myProcess.numberOfPieces){
+                            if (requestedPiece == myProcess.numberOfPieces) {
                                 pieceSize = myProcess.lastPieceSize;
                             }
                             byte[] piece = myProcess.myFileObject.readPiece(requestedPiece, pieceSize);
-                            CreateAndSendPieceMessage(newMessage.messageOrigin,requestedPiece, piece);
+                            CreateAndSendPieceMessage(newMessage.messageOrigin, requestedPiece, piece);
                         }
                         break;
                     case 7:
                         //Handle Piece message
                         pieceIndex = newMessage.pieceIndex;
-                        if(!myProcess.downloadedPieces.contains(pieceIndex)){
+                        if (!myProcess.downloadedPieces.contains(pieceIndex)) {
                             //System.out.println("Received piece " + pieceIndex + " from "+ peerId);
                             int offset = (pieceIndex - 1) * myProcess.pieceSize;
                             int pieceSize = myProcess.pieceSize;
@@ -230,17 +235,18 @@ public class MessageHandler implements Runnable {
                             //System.out.println("Downloaded piece successfully!! : " + peerId + ":::" + pieceIndex);
                             if (pieceDownloaded) {
                                 //update bitField
+                                peerProcess.logger.writeLog(LogMessage.PIECE_DOWNLOAD,new String[]{peerId,Integer.toString(pieceIndex),Integer.toString(myProcess.downloadedPieces.size())});
                                 myProcess.downloadedPieces.add(pieceIndex);
-                                myProcess.downloadRate.put(peerId, myProcess.downloadRate.get(peerId)+1);
-                                System.out.println("Received "+ myProcess.downloadedPieces.size() + " pieces out of " + myProcess.numberOfPieces + " pieces");
-                                System.out.println("Requested "+ myProcess.requestedPieces.size() + " pieces out of " + myProcess.numberOfPieces + " pieces");
+                                myProcess.downloadRate.put(peerId, myProcess.downloadRate.get(peerId) + 1);
+                                System.out.println("Received " + myProcess.downloadedPieces.size() + " pieces out of " + myProcess.numberOfPieces + " pieces");
+                                System.out.println("Requested " + myProcess.requestedPieces.size() + " pieces out of " + myProcess.numberOfPieces + " pieces");
                                 myProcess.myBitField[pieceIndex - 1] = true;
                                 for (TCPConnectionInfo conn : myProcess.peersToTCPConnectionsMapping.values()) {
                                     CreateAndSendHaveMessage(conn, pieceIndex);
                                 }
-                                if(myProcess.canRequestStatus.get(peerId)){
+                                if (myProcess.canRequestStatus.get(peerId)) {
                                     int requestPiece = getARandomInterestingPiece(peerId);
-                                    if(requestPiece>0){
+                                    if (requestPiece > 0) {
                                         myProcess.requestedPieces.add(requestPiece);
                                         CreateAndSendRequestMessage(newMessage.messageOrigin, requestPiece);
                                     }
@@ -250,6 +256,11 @@ public class MessageHandler implements Runnable {
                         break;
                     case 100:
                         //Handle Handshake message
+                        if(peerId.compareTo(myProcess.peerId)>0) {
+                            peerProcess.logger.writeLog(LogMessage.CLIENT_CONNECT, new String[]{peerId});
+                        }else{
+                            peerProcess.logger.writeLog(LogMessage.SERVER_CONNECT, new String[]{peerId});
+                        }
                         CreateAndSendBitFieldMessage(newMessage.messageOrigin);
                         break;
                     default:

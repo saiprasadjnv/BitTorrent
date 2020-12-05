@@ -3,7 +3,7 @@ public enum LogMessage {
     CLIENT_CONNECT,                 // TCP Connection to peer; args = [neighbour_peer:String]
     SERVER_CONNECT,                 // TCP Connection from peer; args = [neighbour_peer:String]
     CHANGE_PREFERRED_NEIGHBOURS,    // change of preferred neighbours; args = peers:String[]
-    CHANGE_UNCHOKED_NEIGHBOUR,      // change of optimistically unchoked neighbour; args = [optimistically_unchoked_neighbourid:String]
+    CHANGE_OPTIMISTIC_NEIGHBOUR,      // change of optimistically unchoked neighbour; args = [optimistically_unchoked_neighbourid:String]
     UNCHOKING,                      // unchoking; args = [neighbour_peer:String]
     CHOKING,                        // choking; args = [neighbour_peer:String]
     RECEIVE_HAVE,                   // receiving ‘have’ message; args = [neighbour_peer:String,piece_index:String]

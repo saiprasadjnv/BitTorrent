@@ -37,6 +37,7 @@ public class NeighbourHandler {
                     this.messageHandler.CreateAndSendChokeMessage(this.myProcess.peersToTCPConnectionsMapping.get(this.myProcess.optimizedNeighbour.get()));
                 }
                 this.myProcess.optimizedNeighbour.set(s);
+                peerProcess.logger.writeLog(LogMessage.CHANGE_OPTIMISTIC_NEIGHBOUR,new String[]{s});
                 this.messageHandler.CreateAndSendUnchokeMessage(this.myProcess.peersToTCPConnectionsMapping.get(s));
             }
         } else {
@@ -49,6 +50,7 @@ public class NeighbourHandler {
     private void setPreferredNeighbours() {
         if (!this.myProcess.interestedPeers.isEmpty()) {
             Vector<String> v = new Vector<>(this.myProcess.interestedPeers);
+            Vector<String> sv = new Vector<>();
             if (this.myProcess.hasFile)
                 Collections.shuffle(v);
             else {
@@ -56,10 +58,12 @@ public class NeighbourHandler {
                 Collections.sort(v, sortbyDownloadRate);
             }
             int endIndex = Math.min(v.size(), this.numPreferredNeighbours);
+
             this.myProcess.preferredNeighbours.clear();
             v.forEach((String pid) -> {
                 if (v.indexOf(pid) < endIndex) {
                     this.myProcess.preferredNeighbours.add(pid);
+                    sv.add(pid);
                     this.myProcess.unchokeStatus.put(pid, true);
                     this.messageHandler.CreateAndSendUnchokeMessage(this.myProcess.peersToTCPConnectionsMapping.get(pid));
                     if (!this.myProcess.hasFile){
@@ -71,6 +75,8 @@ public class NeighbourHandler {
                         this.messageHandler.CreateAndSendChokeMessage(this.myProcess.peersToTCPConnectionsMapping.get(pid));
                 }
             });
+            String[] sarr = sv.toArray(new String[sv.size()]);
+            peerProcess.logger.writeLog(LogMessage.CHANGE_PREFERRED_NEIGHBOURS, sarr);
         } else {
             this.myProcess.preferredNeighbours.forEach((String pid) -> {
                 this.myProcess.unchokeStatus.put(pid, false);

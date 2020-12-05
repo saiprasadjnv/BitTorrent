@@ -244,6 +244,7 @@ public class peerProcess {
             ex.printStackTrace();
         }
         boolean isFileSharedToAllPeers = false;
+        boolean addedLogFor_downloadedAllFiles = false;
         while (!isFileSharedToAllPeers) {
             //Wait until the peer sharing process is finished
             isFileSharedToAllPeers = true;
@@ -261,6 +262,10 @@ public class peerProcess {
                         break;
                     }
                 }
+            }
+            if(peerNode.downloadedPieces.size()==peerNode.numberOfPieces && !addedLogFor_downloadedAllFiles){
+                addedLogFor_downloadedAllFiles = true;
+                peerProcess.logger.writeLog(LogMessage.DOWNLOAD_COMPLETE,null);
             }
         }
         messageHandlerThread.interrupt();

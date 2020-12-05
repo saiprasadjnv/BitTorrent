@@ -26,7 +26,7 @@ public class Logger {
         logFileStream.close();
     }
 
-    public void writeLog(LogMessage logMessage, String[] args) throws Exception {
+    public void writeLog(LogMessage logMessage, String[] args) {
         // args is always array of strings; their structure based on log message is mentioned in LogMessage.java
         String text = null;
         String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
@@ -41,7 +41,7 @@ public class Logger {
                 case CHANGE_PREFERRED_NEIGHBOURS:
                     text = "Peer " + this.peerId + " has the preferred neighbors " + String.join(", ", args) + ".";
                     break;
-                case CHANGE_UNCHOKED_NEIGHBOUR:
+                case CHANGE_OPTIMISTIC_NEIGHBOUR:
                     text = args[0] + " is the peer ID of the optimistically unchoked neighbor.";
                     break;
                 case UNCHOKING:
@@ -69,8 +69,7 @@ public class Logger {
                     throw new Exception("Invalid Log Message");
             }
             out.write(dateTime + ": " + text + "\n");
-        } catch (
-                Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
