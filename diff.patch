@@ -1,0 +1,54 @@
+Index: src/peerProcess.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/peerProcess.java b/src/peerProcess.java
+--- a/src/peerProcess.java	(revision 3e57d34a48db88126c759008f5e55a6bcbabf8a3)
++++ b/src/peerProcess.java	(date 1607127799620)
+@@ -24,9 +24,9 @@
+     public ConcurrentLinkedQueue<Message> messageQueue;
+     public ConcurrentHashMap<String, TCPConnectionInfo> peersToTCPConnectionsMapping;
+ //   static String HOMEDIR = //System.getProperty("user.dir") + "/";
+-    static String HOMEDIR = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/";
+-    static String peerInfoConfig = HOMEDIR + "src/"+ "PeerInfo.cfg";
+-    static String commonConfig = HOMEDIR + "src/"+ "Common.cfg";
++//    static String HOMEDIR = "/Users/macuser/Documents/Study_1/Study/CN/Project/BitTorrent/";
++    static String peerInfoConfig = "PeerInfo.cfg";
++    static String commonConfig = "Common.cfg";
+     public static Logger logger;
+     private String peerHome;
+     protected HashMap<String,RemotePeerInfo> peerInfoMap;
+@@ -51,7 +51,7 @@
+      * */
+     peerProcess(String peerId) {
+         this.peerId = peerId;
+-        peerHome = HOMEDIR + "peer_" + peerId + "/";
++        peerHome = "peer_" + peerId + "/";
+         initializeLogger();
+         initializeConfig();
+         getPeerInfo();
+@@ -162,6 +162,8 @@
+         canRequestStatus = new HashMap<>();
+ 
+         downloadRate = new ConcurrentHashMap<>();
++        optimizedNeighbour = new AtomicReference<>();
++        preferredNeighbours = new ConcurrentLinkedQueue<>();
+         unchokeStatus = new ConcurrentHashMap<>();
+         boolean makeConnections = true;
+         try {
+@@ -200,12 +202,12 @@
+     public static void main(String[] args) {
+         peerProcess peerNode = new peerProcess(args[0]);
+         MessageHandler myMessageHandler = new MessageHandler(peerNode);
+-        NeighbourHandler myNeighbourHandler = new NeighbourHandler(myMessageHandler);
+-        myNeighbourHandler.runUnchokeTasks();
+ //       new Thread(myMessageHandler).start();
+         Thread messageHandlerThread = new Thread(myMessageHandler);
+         ArrayList<Thread> listenerThreads = new ArrayList<>();
+         messageHandlerThread.start();
++        NeighbourHandler myNeighbourHandler = new NeighbourHandler(myMessageHandler);
++        myNeighbourHandler.runUnchokeTasks();
+         try {
+             int remainingPeers = peerNode.peerInfoMap.size();
+             // Send connection requests to all the peers listed in peersToConnect

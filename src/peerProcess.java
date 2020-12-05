@@ -162,6 +162,8 @@ public class peerProcess {
         canRequestStatus = new HashMap<>();
 
         downloadRate = new ConcurrentHashMap<>();
+        optimizedNeighbour = new AtomicReference<>();
+        preferredNeighbours = new ConcurrentLinkedQueue<>();
         unchokeStatus = new ConcurrentHashMap<>();
         boolean makeConnections = true;
         try {
@@ -200,12 +202,12 @@ public class peerProcess {
     public static void main(String[] args) {
         peerProcess peerNode = new peerProcess(args[0]);
         MessageHandler myMessageHandler = new MessageHandler(peerNode);
-        NeighbourHandler myNeighbourHandler = new NeighbourHandler(myMessageHandler);
-        myNeighbourHandler.runUnchokeTasks();
 //       new Thread(myMessageHandler).start();
         Thread messageHandlerThread = new Thread(myMessageHandler);
         ArrayList<Thread> listenerThreads = new ArrayList<>();
         messageHandlerThread.start();
+        NeighbourHandler myNeighbourHandler = new NeighbourHandler(myMessageHandler);
+        myNeighbourHandler.runUnchokeTasks();
         try {
             int remainingPeers = peerNode.peerInfoMap.size();
             // Send connection requests to all the peers listed in peersToConnect
