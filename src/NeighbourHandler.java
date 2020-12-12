@@ -75,8 +75,10 @@ public class NeighbourHandler {
                         this.messageHandler.CreateAndSendChokeMessage(this.myProcess.peersToTCPConnectionsMapping.get(pid));
                 }
             });
-            String[] sarr = sv.toArray(new String[sv.size()]);
-            peerProcess.logger.writeLog(LogMessage.CHANGE_PREFERRED_NEIGHBOURS, sarr);
+            if (sv.size()>0) {
+                String[] sarr = sv.toArray(new String[sv.size()]);
+                peerProcess.logger.writeLog(LogMessage.CHANGE_PREFERRED_NEIGHBOURS, sarr);
+            }
         } else {
             this.myProcess.preferredNeighbours.forEach((String pid) -> {
                 this.myProcess.unchokeStatus.put(pid, false);

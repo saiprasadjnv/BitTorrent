@@ -34,7 +34,7 @@ public class MessageHandler implements Runnable {
                 associatedTCPConnection.sendMessage(bitFieldMessage);
             }
         } catch (NullPointerException | IOException ex) {
-            ex.printStackTrace();
+//            ex.printStackTrace();
         }
     }
 
@@ -46,7 +46,7 @@ public class MessageHandler implements Runnable {
                 associatedTCPConnection.sendMessage(haveMessage);
             }
         } catch (NullPointerException | IOException ex) {
-            ex.printStackTrace();
+//            ex.printStackTrace();
         }
     }
 
@@ -57,7 +57,7 @@ public class MessageHandler implements Runnable {
                 associatedTCPConnection.sendMessage(requestMessage);
             }
         } catch (NullPointerException | IOException ex) {
-            ex.printStackTrace();
+//            ex.printStackTrace();
         }
     }
 
@@ -68,7 +68,7 @@ public class MessageHandler implements Runnable {
                 associatedTCPConnection.sendMessage(interestedMessage);
             }
         } catch (NullPointerException | IOException ex) {
-            ex.printStackTrace();
+//            ex.printStackTrace();
         }
     }
 
@@ -79,7 +79,7 @@ public class MessageHandler implements Runnable {
                 associatedTCPConnection.sendMessage(notInterestedMessage);
             }
         } catch (NullPointerException | IOException ex) {
-            ex.printStackTrace();
+//            ex.printStackTrace();
         }
     }
 
@@ -90,7 +90,7 @@ public class MessageHandler implements Runnable {
                 associatedTCPConnection.sendMessage(chokeMessage);
             }
         } catch (NullPointerException | IOException ex) {
-            ex.printStackTrace();
+//            ex.printStackTrace();
         }
     }
 
@@ -101,7 +101,7 @@ public class MessageHandler implements Runnable {
                 associatedTCPConnection.sendMessage(unChokeMessage);
             }
         } catch (NullPointerException | IOException ex) {
-            ex.printStackTrace();
+//            ex.printStackTrace();
         }
     }
 
@@ -112,7 +112,7 @@ public class MessageHandler implements Runnable {
                 associatedTCPConnection.sendMessage(pieceMessage);
             }
         } catch (NullPointerException | IOException ex) {
-            ex.printStackTrace();
+//            ex.printStackTrace();
         }
     }
 

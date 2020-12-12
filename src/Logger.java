@@ -42,7 +42,7 @@ public class Logger {
                     text = "Peer " + this.peerId + " has the preferred neighbors " + String.join(", ", args) + ".";
                     break;
                 case CHANGE_OPTIMISTIC_NEIGHBOUR:
-                    text = args[0] + " is the peer ID of the optimistically unchoked neighbor.";
+                    text = "Peer "+ this.peerId + " has the optimistically unchoked neighbor " + args[0];
                     break;
                 case UNCHOKING:
                     text = "Peer " + this.peerId + " is unchoked by " + args[0] + ".";
@@ -70,7 +70,7 @@ public class Logger {
             }
             out.write(dateTime + ": " + text + "\n");
         } catch (Exception ex) {
-            ex.printStackTrace();
+//            ex.printStackTrace();
         }
     }
 }
